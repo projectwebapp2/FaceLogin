@@ -565,7 +565,7 @@
           <label style="text-align: center;">รหัสผ่าน Admin</label>
           <input type="password" id="admin-pin" class="form-control" placeholder="••••••••" style="text-align: center; font-size: 1.2em; letter-spacing: 2px;">
         </div>
-        <button class="btn btn-primary" onclick="app.verifyAdmin()" style="padding: 16px; font-size: 1.1em;">
+        <button id="btn-verify-admin" class="btn btn-primary" onclick="app.verifyAdmin()" style="padding: 16px; font-size: 1.1em;">
           <i data-lucide="log-in" style="width: 20px; height: 20px;"></i> เข้าสู่ระบบ
         </button>
         <div id="admin-login-msg" style="color: var(--danger); text-align: center; margin-top: 16px; font-size: 0.95em; font-weight: 500;"></div>
@@ -668,6 +668,17 @@
             * เมื่อพนักงานใช้ Wi-Fi เดียวกัน ระบบจะอนุญาตให้เช็คอินทันที (ข้ามการเช็คระยะ GPS)<br>
             * ปล่อยช่องว่างไว้ หากไม่ต้องการใช้งานระบบตรวจสอบ Wi-Fi
           </div>
+        </div>
+      </div>
+
+      <!-- ส่วนตั้งรหัสผ่าน Admin -->
+      <div class="card-panel" style="grid-column: 1 / -1;">
+        <div style="margin-bottom: 20px; font-weight: 700; font-size: 1.1em; color: var(--danger); display: flex; align-items: center; gap: 10px;">
+          <i data-lucide="lock" style="width: 20px; height: 20px;"></i> ความปลอดภัย (รหัสผ่านแอดมิน)
+        </div>
+        <div class="form-group">
+          <label>ตั้งรหัสผ่านใหม่ (ปล่อยว่างไว้หากไม่ต้องการเปลี่ยน)</label>
+          <input type="text" id="cfg-admin-pin" class="form-control" placeholder="กรอกรหัสผ่านใหม่ที่ต้องการ">
         </div>
       </div>
     </div>
@@ -867,7 +878,6 @@
 <script>
 // --- การตั้งค่าเริ่มต้น (HARDCODED_API_URL) ---
 const HARDCODED_API_URL = 'https://script.google.com/macros/s/AKfycbxdMDJFsTYQSvA2tC6qfJody0TkJqO76d5rSFO78GQDW5nxYqMsMW4w27oIaXQhcEEl/exec';
-const ADMIN_PIN = 'admin123'; 
 const MATCH_THRESHOLD = 0.45; 
 
 const app = {
@@ -981,16 +991,40 @@ const app = {
 
   // --- 2. Admin & Config ---
   showAdminLogin() { this.navigate('view-admin-login'); },
-  verifyAdmin() {
+  
+  async verifyAdmin() {
     const pin = document.getElementById('admin-pin').value;
-    if(pin === ADMIN_PIN) {
-      document.getElementById('admin-pin').value = '';
-      document.getElementById('admin-login-msg').innerText = '';
-      this.navigate('view-admin-dashboard');
-    } else {
-      document.getElementById('admin-login-msg').innerText = 'รหัสผ่านไม่ถูกต้อง';
+    const msgEl = document.getElementById('admin-login-msg');
+    
+    if(!pin) return msgEl.innerText = 'กรุณาใส่รหัสผ่าน';
+    if(!this.apiUrl) return msgEl.innerText = 'ยังไม่ได้ตั้งค่า API URL กรุณาตั้งค่าก่อน';
+
+    const btn = document.getElementById('btn-verify-admin');
+    btn.disabled = true;
+    this.setHtmlAndIcons('btn-verify-admin', '<i data-lucide="loader-2" class="loader-dark" style="border:none; animation: spin 1.5s linear infinite; width: 20px; height: 20px;"></i> ตรวจสอบข้อมูล...');
+    msgEl.innerText = '';
+
+    try {
+      const res = await fetch(this.apiUrl, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'verifyAdmin', pin: pin })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        document.getElementById('admin-pin').value = '';
+        this.navigate('view-admin-dashboard');
+      } else {
+        msgEl.innerText = data.error || 'รหัสผ่านไม่ถูกต้อง';
+      }
+    } catch(e) {
+      msgEl.innerText = 'ไม่สามารถตรวจสอบได้: ' + e.message;
     }
+    
+    btn.disabled = false;
+    this.setHtmlAndIcons('btn-verify-admin', '<i data-lucide="log-in" style="width: 20px; height: 20px;"></i> เข้าสู่ระบบ');
   },
+  
   adminLogout() { this.navigate('view-home'); },
 
   async loadConfigData() {
@@ -1078,6 +1112,7 @@ const app = {
     const lng = document.getElementById('cfg-lng').value;
     const rad = document.getElementById('cfg-rad').value;
     const officeIp = document.getElementById('cfg-ip').value.trim();
+    const adminPin = document.getElementById('cfg-admin-pin').value.trim();
     const msg = document.getElementById('cfg-msg');
 
     if(!api) return msg.innerHTML = '<span style="color:var(--danger)">กรุณาใส่ API URL</span>';
@@ -1091,10 +1126,14 @@ const app = {
     this.setHtmlAndIcons('btn-save-cfg', '<span class="loader"></span> กำลังบันทึก...');
     try {
       const res = await fetch(api, {
-        method: 'POST', body: JSON.stringify({ action: 'saveConfig', lat, lng, radius: rad, officeIp: officeIp })
+        method: 'POST', 
+        body: JSON.stringify({ action: 'saveConfig', lat, lng, radius: rad, officeIp: officeIp, adminPin: adminPin })
       });
       await res.json();
       msg.innerHTML = '<span style="color:var(--success)">บันทึกตั้งค่าเรียบร้อย</span>';
+      
+      // ล้างช่องรหัสผ่านเพื่อแสดงว่าบันทึกแล้ว
+      document.getElementById('cfg-admin-pin').value = ''; 
     } catch(e) {
       msg.innerHTML = `<span style="color:var(--danger)">Error: ${e.message}</span>`;
     }
