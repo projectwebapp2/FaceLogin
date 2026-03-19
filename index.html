@@ -335,17 +335,19 @@
     }
     .image-modal-content {
       position: relative; 
-      width: 90vw; 
-      max-width: 450px; /* บังคับขนาดกรอบให้ใหญ่ขึ้น */
+      width: auto; 
+      max-width: 90vw; 
       max-height: 90vh;
       animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     .image-modal-content img {
-      width: 100%; /* บังคับให้ภาพขยายเต็มกรอบที่ตั้งไว้ */
+      width: 100%; 
+      max-width: 260px; /* ลดขนาดกรอบภาพลงไม่ให้ภาพขยายจนแตก เพื่อความคมชัด */
       height: auto; 
       max-height: 85vh; border-radius: 16px;
       box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
       border: 4px solid #fff; object-fit: contain;
+      display: block;
     }
     .image-modal-close {
       position: absolute; top: -16px; right: -16px;
