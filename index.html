@@ -334,11 +334,16 @@
       display: flex; opacity: 1;
     }
     .image-modal-content {
-      position: relative; max-width: 90vw; max-height: 90vh;
+      position: relative; 
+      width: 90vw; 
+      max-width: 450px; /* บังคับขนาดกรอบให้ใหญ่ขึ้น */
+      max-height: 90vh;
       animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     .image-modal-content img {
-      max-width: 100%; max-height: 85vh; border-radius: 16px;
+      width: 100%; /* บังคับให้ภาพขยายเต็มกรอบที่ตั้งไว้ */
+      height: auto; 
+      max-height: 85vh; border-radius: 16px;
       box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
       border: 4px solid #fff; object-fit: contain;
     }
@@ -1489,7 +1494,7 @@ const app = {
     let photoBase64 = '';
     if (this.regCounter === 0) {
       const canvas = document.createElement('canvas');
-      const scale = 150 / Math.max(video.videoWidth, video.videoHeight); // ลดขนาดเหลือประมาณ 150px
+      const scale = 250 / Math.max(video.videoWidth, video.videoHeight); // เพิ่มความละเอียดรูปถ่าย (เดิม 150 เป็น 250) เพื่อให้เวลาซูมดูชัดขึ้น
       canvas.width = video.videoWidth * scale;
       canvas.height = video.videoHeight * scale;
       const ctx = canvas.getContext('2d');
