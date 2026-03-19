@@ -7,6 +7,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- เพิ่ม Library SweetAlert2 สำหรับแจ้งเตือนแบบสวยงาม -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   
   <style>
     /* ==========================================================================
@@ -312,6 +314,14 @@
       border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite;
     }
     .loader-dark { border-color: rgba(0,0,0,0.1); border-top-color: var(--primary); }
+
+    /* SweetAlert2 Custom Style ให้เข้ากับธีม */
+    .swal2-popup {
+      font-family: 'Sarabun', sans-serif !important;
+      border-radius: 24px !important;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25) !important;
+    }
+    .swal2-title { color: #1e3a8a !important; font-weight: 700 !important; }
 
     /* Image Modal (สำหรับดูรูปพนักงาน) */
     .image-modal-overlay {
@@ -977,7 +987,7 @@ const app = {
       return true;
     } catch (e) {
       this.setHtmlAndIcons(badgeId, '<i data-lucide="x-circle" style="width: 18px; height: 18px; color: var(--danger);"></i> โหลดล้มเหลว');
-      alert("Error loading AI: " + e.message);
+      Swal.fire({ icon: 'error', title: 'โหลด AI ล้มเหลว', text: e.message, confirmButtonColor: '#4f46e5' });
       return false;
     }
   },
@@ -1086,9 +1096,9 @@ const app = {
       const pos = await this.getAccurateLocation();
       document.getElementById('cfg-lat').value = pos.coords.latitude;
       document.getElementById('cfg-lng').value = pos.coords.longitude;
-      alert(`✅ ดึงพิกัดเรียบร้อย (ความคลาดเคลื่อน ±${Math.round(pos.coords.accuracy)} เมตร)`);
+      Swal.fire({ icon: 'success', title: 'ดึงพิกัดสำเร็จ', text: `ความคลาดเคลื่อน ±${Math.round(pos.coords.accuracy)} เมตร`, confirmButtonColor: '#10b981' });
     } catch(e) {
-      alert('ดึงพิกัดไม่ได้: ' + e.message);
+      Swal.fire({ icon: 'error', title: 'ดึงพิกัดไม่ได้', text: e.message, confirmButtonColor: '#ef4444' });
     }
 
     if(btn) this.setHtmlAndIcons('btn-get-admin-loc', '<i data-lucide="crosshair" style="width: 18px; height: 18px;"></i> ดึงพิกัดปัจจุบัน');
@@ -1560,8 +1570,14 @@ const app = {
 
     const nameInput = document.getElementById('reg-name');
     const name = nameInput.value.trim();
-    if(!name) return alert('กรุณาระบุชื่อพนักงาน');
-    if(!this.apiUrl) return alert('กรุณาตั้งค่า API ก่อนในเมนูแอดมิน');
+    if(!name) {
+      Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาระบุชื่อพนักงานให้เรียบร้อย', confirmButtonColor: '#f59e0b' });
+      return;
+    }
+    if(!this.apiUrl) {
+      Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาตั้งค่า API URL ก่อนในเมนูแอดมิน', confirmButtonColor: '#f59e0b' });
+      return;
+    }
 
     const btn = document.getElementById('btn-save-face');
     const msg = document.getElementById('reg-msg');
@@ -1883,11 +1899,20 @@ const app = {
         method: 'POST',
         body: JSON.stringify({ action: 'logAttendance', name: this.matchedName, type: typeStr, lat: this.currentLat, lng: this.currentLng })
       });
-      alert(`✅ บันทึก [${typeStr}] สำหรับ ${this.matchedName} สำเร็จ!`);
+      
+      // เปลี่ยนจาก alert ธรรมดาเป็น SweetAlert2
+      await Swal.fire({ 
+        icon: 'success', 
+        title: 'บันทึกสำเร็จ!', 
+        text: `บันทึก [${typeStr}] สำหรับ ${this.matchedName} เรียบร้อยแล้ว`, 
+        timer: 2500, 
+        showConfirmButton: false 
+      });
+
       document.getElementById('scan-modal').style.display = 'none';
       this.navigate('view-home');
     } catch(e) {
-      alert(`❌ บันทึกล้มเหลว: ${e.message}`);
+      Swal.fire({ icon: 'error', title: 'บันทึกล้มเหลว', text: e.message, confirmButtonColor: '#ef4444' });
       this.closeModal(); 
     }
   },
