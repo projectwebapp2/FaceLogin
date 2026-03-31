@@ -808,20 +808,40 @@
         </div>
       </div>
 
-      <!-- ตารางสรุปรายวัน -->
-      <div class="table-container" id="table-daily-container" style="display: none;">
-        <table id="daily-table">
-          <thead>
-            <tr>
-              <th>ชื่อพนักงาน</th>
-              <th>เข้างาน</th>
-              <th>เลิกงาน</th>
-            </tr>
-          </thead>
-          <tbody id="daily-tbody">
-            <!-- Data will be injected here -->
-          </tbody>
-        </table>
+      <!-- ตารางสรุปรายวัน พร้อมบันทึกการทำงาน -->
+      <div id="table-daily-container" style="display: none;">
+        
+        <!-- ส่วนบันทึกรายละเอียดการทำงาน -->
+        <div class="card-panel" style="padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+          <div style="margin-bottom: 16px; font-weight: 700; font-size: 1.1em; color: var(--primary); display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="edit-3" style="width: 20px; height: 20px;"></i> บันทึกรายละเอียดการทำงานประจำวัน
+          </div>
+          <textarea id="daily-report-details" class="form-control" rows="4" placeholder="ระบุรายละเอียดงานที่ทำในวันนี้... ตัวอย่างเช่น: 1. ประชุมทีม 2. ตรวจสอบระบบ..." style="resize: vertical; min-height: 100px; line-height: 1.6;"></textarea>
+          <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+            <button class="btn btn-primary" style="width: auto; padding: 12px 24px; border-radius: 12px;" onclick="app.saveDailyReport()">
+              <i data-lucide="save" style="width: 18px; height: 18px;"></i> บันทึกรายละเอียด
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 12px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; padding-left: 4px;">
+          <i data-lucide="users" style="width: 20px; height: 20px; color: var(--text-muted);"></i> รายชื่อผู้เข้างานในวันนี้
+        </div>
+
+        <div class="table-container">
+          <table id="daily-table">
+            <thead>
+              <tr>
+                <th>ชื่อพนักงาน</th>
+                <th>เข้างาน</th>
+                <th>เลิกงาน</th>
+              </tr>
+            </thead>
+            <tbody id="daily-tbody">
+              <!-- Data will be injected here -->
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- ตารางข้อมูลพนักงาน -->
@@ -1471,10 +1491,12 @@ const app = {
     const tbody = document.getElementById('daily-tbody');
     const status = document.getElementById('report-status');
     const dateVal = document.getElementById('report-date').value;
+    const detailsInput = document.getElementById('daily-report-details');
 
     if (!dateVal) return;
 
     tbody.innerHTML = '';
+    if(detailsInput) detailsInput.value = ''; // เคลียร์ช่องข้อความรอโหลด
     status.style.display = 'block';
     this.setHtmlAndIcons('report-status', '<i data-lucide="loader-2" class="loader-dark" style="border:none; animation: spin 1.5s linear infinite; width: 24px; height: 24px;"></i> กำลังดึงข้อมูล...');
 
@@ -1484,12 +1506,26 @@ const app = {
       const dObj = new Date(dateVal);
       const month = dObj.getMonth() + 1;
       const year = dObj.getFullYear();
+      
+      // แปลงวันที่สำหรับใช้เรียก Report Key (เช่น 01/10/2026)
+      const dd = String(dObj.getDate()).padStart(2, '0');
+      const mm = String(month).padStart(2, '0');
+      const dateKey = `${dd}/${mm}/${year}`;
 
-      const logs = await fetch(`${this.apiUrl}?action=getLogs&month=${month}&year=${year}`).then(r => r.json());
+      // ดึงข้อมูล 2 อย่างพร้อมกัน: รายชื่อเข้างาน และ รายละเอียดงานที่จดไว้
+      const [logs, reports] = await Promise.all([
+        fetch(`${this.apiUrl}?action=getLogs&month=${month}&year=${year}`).then(r => r.json()),
+        fetch(`${this.apiUrl}?action=getDailyReports&month=${month}&year=${year}`).then(r => r.json())
+      ]);
       
       if(logs.error) throw new Error(logs.error);
       
       status.style.display = 'none';
+      
+      // ถอดค่าและใส่ในช่อง Textarea หากพบว่ามีบันทึกของวันนั้น
+      if (detailsInput && reports && !reports.error && reports[dateKey]) {
+        detailsInput.value = reports[dateKey];
+      }
       
       const dailyLogs = Array.isArray(logs) ? logs.filter(l => {
         if (!l.date) return false;
@@ -1530,6 +1566,42 @@ const app = {
     } catch(e) {
       status.style.display = 'block';
       this.setHtmlAndIcons('report-status', `<span style="color:var(--danger); display: flex; align-items: center; justify-content: center; gap: 8px;"><i data-lucide="alert-circle"></i> เกิดข้อผิดพลาด: ${e.message}</span>`);
+    }
+  },
+
+  async saveDailyReport() {
+    const dateVal = document.getElementById('report-date').value;
+    const details = document.getElementById('daily-report-details').value.trim();
+    
+    if (!dateVal) return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกวันที่ก่อนบันทึก', confirmButtonColor: '#f59e0b' });
+    if (!this.apiUrl) return Swal.fire({ icon: 'error', title: 'แจ้งเตือน', text: 'ยังไม่ได้ตั้งค่า API URL', confirmButtonColor: '#ef4444' });
+
+    const dObj = new Date(dateVal);
+    const dd = String(dObj.getDate()).padStart(2, '0');
+    const mm = String(dObj.getMonth() + 1).padStart(2, '0');
+    const yyyy = dObj.getFullYear();
+    const dateKey = `${dd}/${mm}/${yyyy}`;
+
+    try {
+      Swal.fire({
+        title: 'กำลังบันทึก...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+      
+      const res = await fetch(this.apiUrl, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'saveDailyReport', date: dateKey, details: details })
+      });
+      const data = await res.json();
+      
+      if(data.success) {
+        Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ', text: data.message, timer: 2000, showConfirmButton: false });
+      } else {
+        throw new Error(data.error || 'เกิดข้อผิดพลาดในการบันทึก');
+      }
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: e.message, confirmButtonColor: '#ef4444' });
     }
   },
 
