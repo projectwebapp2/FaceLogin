@@ -315,6 +315,45 @@
     }
     .loader-dark { border-color: rgba(0,0,0,0.1); border-top-color: var(--primary); }
 
+    /* Grid สำหรับหน้าประวัติการทำงานย้อนหลัง */
+    .history-grid { display: grid; grid-template-columns: 1fr; gap: 16px; width: 100%; }
+    @media (min-width: 768px) {
+      .history-grid { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    }
+
+    /* ปุ่ม Pagination สำหรับการแบ่งหน้า */
+    .pagination-btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: #ffffff;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.9em;
+    }
+    .pagination-btn:hover:not(:disabled) {
+      background: var(--bg-main);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .pagination-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+    }
+    .pagination-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: #f8fafc;
+    }
+
     /* SweetAlert2 Custom Style ให้เข้ากับธีม */
     .swal2-popup {
       font-family: 'Sarabun', sans-serif !important;
@@ -612,13 +651,24 @@
         </div>
         <i data-lucide="chevron-right" style="color: #cbd5e1; width: 24px; height: 24px;"></i>
       </div>
+
+      <!-- เพิ่มเมนูใหม่: สมุดบันทึกงานย้อนหลัง -->
+      <div class="menu-card" onclick="app.navigate('view-work-history')" style="grid-column: 1 / -1;">
+        <div class="menu-icon" style="background: rgba(16,185,129,0.15); color: #059669;"><i data-lucide="book-open" style="width: 32px; height: 32px;"></i></div>
+        <div class="menu-info">
+          <div class="menu-title">สมุดบันทึกงานย้อนหลัง</div>
+          <div class="menu-desc">ค้นหาและดูรายละเอียดงานประจำวันย้อนหลัง</div>
+        </div>
+        <i data-lucide="chevron-right" style="color: #cbd5e1; width: 24px; height: 24px;"></i>
+      </div>
+
     </div>
   </div>
 
   <!-- =========================================================
        VIEW: CONFIG (ADMIN)
        ========================================================= -->
-  <div id="view-config" class="view">
+  <div id="view-config" class="view" style="width: 100%;">
     <div class="top-nav">
       <button class="btn-back" onclick="app.navigate('view-admin-dashboard')">
         <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> แผงควบคุม
@@ -704,12 +754,12 @@
   <!-- =========================================================
        VIEW: REPORT (ADMIN)
        ========================================================= -->
-  <div id="view-report" class="view">
+  <div id="view-report" class="view" style="width: 100%;">
     <div class="top-nav">
       <button class="btn-back" onclick="app.navigate('view-admin-dashboard')">
         <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> แผงควบคุม
       </button>
-      <span class="nav-title">ประวัติการทำงาน</span>
+      <span class="nav-title">รายงานการทำงาน</span>
     </div>
 
     <div class="card-panel report-widget" style="padding: 24px;">
@@ -863,6 +913,113 @@
     </div>
   </div>
 
+  <!-- =========================================================
+       VIEW: WORK HISTORY (ADMIN)
+       ========================================================= -->
+  <div id="view-work-history" class="view" style="width: 100%;">
+    <div class="top-nav">
+      <button class="btn-back" onclick="app.navigate('view-admin-dashboard')">
+        <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> แผงควบคุม
+      </button>
+      <span class="nav-title">สมุดบันทึกงานย้อนหลัง</span>
+    </div>
+
+    <!-- List View: แสดงรายการของแต่ละวัน (Full Width) -->
+    <div id="history-list-view" style="width: 100%;">
+      <!-- ปรับการ์ดค้นหาให้กว้างเต็มหน้าจอเสมอ -->
+      <div class="card-panel" style="padding: 24px; width: 100%; margin-bottom: 24px; display: block; box-sizing: border-box;">
+        <div style="margin-bottom: 16px; font-weight: 700; color: var(--primary); display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="search" style="width: 20px; height: 20px;"></i> ค้นหาประวัติการทำงานตามเดือน
+          </div>
+        </div>
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+          <select id="history-month" class="form-control" style="flex: 1; min-width: 120px; padding: 14px;">
+            <option value="1">มกราคม</option>
+            <option value="2">กุมภาพันธ์</option>
+            <option value="3">มีนาคม</option>
+            <option value="4">เมษายน</option>
+            <option value="5">พฤษภาคม</option>
+            <option value="6">มิถุนายน</option>
+            <option value="7">กรกฎาคม</option>
+            <option value="8">สิงหาคม</option>
+            <option value="9">กันยายน</option>
+            <option value="10">ตุลาคม</option>
+            <option value="11">พฤศจิกายน</option>
+            <option value="12">ธันวาคม</option>
+          </select>
+          <select id="history-year" class="form-control" style="flex: 1; min-width: 120px; padding: 14px;">
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+          </select>
+          <button class="btn btn-primary" style="width: auto; padding: 12px 24px; border-radius: 12px; flex-shrink: 0;" onclick="app.loadWorkHistory()">
+            <i data-lucide="download" style="width: 20px; height: 20px; margin-right: 6px;"></i> โหลดข้อมูล
+          </button>
+        </div>
+
+        <div style="position: relative;">
+          <i data-lucide="search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 18px; height: 18px;"></i>
+          <!-- อัปเดต oninput ให้เรียกใช้ onSearchInput เพื่อรีเซ็ตกลับหน้า 1 อัตโนมัติ -->
+          <input type="text" id="history-search-keyword" class="form-control" style="padding-left: 44px; width: 100%; box-sizing: border-box;" placeholder="ค้นหาข้อความรายละเอียดงาน หรือ ชื่อพนักงาน..." oninput="app.onSearchInput()">
+        </div>
+      </div>
+
+      <!-- เปลี่ยนสถานะกำลังโหลดให้กว้างเต็มหน้าจอเท่าการ์ด จะได้ไม่ทำให้หน้าเว็บหดตัว -->
+      <div id="history-status" class="card-panel" style="text-align: center; color: var(--text-muted); margin-bottom: 24px; padding: 60px 24px; font-size: 1.1em; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; width: 100%; box-sizing: border-box;">
+        <i data-lucide="loader-2" class="loader-dark" style="animation: spin 1.5s linear infinite; width: 36px; height: 36px; color: var(--primary); border: none;"></i>
+        กำลังดึงข้อมูล...
+      </div>
+
+      <!-- Container สำหรับการ์ด (Grid แนวนอนบน PC) -->
+      <div id="history-cards-container" class="history-grid">
+        <!-- Cards จะถูกสร้างอัตโนมัติที่นี่ -->
+      </div>
+      
+      <!-- ส่วนควบคุม Pagination -->
+      <div id="history-pagination-container"></div>
+    </div>
+
+    <!-- Detail View: แสดงรายละเอียดเมื่อคลิกแต่ละวัน (Full Width) -->
+    <div id="history-detail-view" style="display: none; width: 100%;">
+      <button class="btn btn-outline" style="margin-bottom: 20px; width: auto; padding: 10px 20px; background: white;" onclick="app.closeHistoryDetail()">
+        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> กลับไปหน้ารายการ
+      </button>
+      
+      <div class="card-panel" style="padding: 32px; width: 100%;">
+        <div style="font-size: 1.4em; font-weight: 700; color: var(--primary); margin-bottom: 32px; text-align: center; display: flex; justify-content: center; align-items: center; gap: 10px;" id="history-detail-title">
+          📅 วันที่ ...
+        </div>
+        
+        <div style="margin-bottom: 12px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="edit-3" style="width: 22px; height: 22px; color: var(--primary);"></i> รายละเอียดการทำงาน
+        </div>
+        <div id="history-detail-text" style="background: #f8fafc; padding: 24px; border-radius: 16px; border: 1px solid var(--border-color); white-space: pre-wrap; line-height: 1.7; color: var(--text-main); margin-bottom: 40px; min-height: 100px; font-size: 1.05em;">
+          ไม่มีบันทึก
+        </div>
+
+        <div style="margin-bottom: 12px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="users" style="width: 22px; height: 22px; color: var(--success);"></i> รายชื่อผู้เข้างาน
+        </div>
+        <div class="table-container">
+          <table style="width: 100%;">
+            <thead>
+              <tr>
+                <th>ชื่อพนักงาน</th>
+                <th>เข้างาน</th>
+                <th>เลิกงาน</th>
+              </tr>
+            </thead>
+            <tbody id="history-detail-tbody">
+              <!-- Workers จะถูกสร้างอัตโนมัติที่นี่ -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div> <!-- End App Container -->
 
 <!-- =========================================================
@@ -921,6 +1078,12 @@ const app = {
   matchedName: null,
   regCounter: 0,
   calendarData: {},
+  
+  // State ตัวแปรสำหรับเก็บประวัติและ Pagination
+  historyData: {}, 
+  historySortedDates: [],
+  historyCurrentPage: 1,
+  historyItemsPerPage: 20,
 
   // --- Utils ---
   formatThaiDate(dateStr) {
@@ -988,6 +1151,9 @@ const app = {
     if(viewId === 'view-config') this.loadConfigData();
     if(viewId === 'view-report') {
       this.switchReportTab('daily');
+    }
+    if(viewId === 'view-work-history') {
+      this.initWorkHistory();
     }
   },
 
@@ -1160,8 +1326,6 @@ const app = {
       });
       await res.json();
       msg.innerHTML = '<span style="color:var(--success)">บันทึกตั้งค่าเรียบร้อย</span>';
-      
-      // ล้างช่องรหัสผ่านเพื่อแสดงว่าบันทึกแล้ว
       document.getElementById('cfg-admin-pin').value = ''; 
     } catch(e) {
       msg.innerHTML = `<span style="color:var(--danger)">Error: ${e.message}</span>`;
@@ -1496,7 +1660,7 @@ const app = {
     if (!dateVal) return;
 
     tbody.innerHTML = '';
-    if(detailsInput) detailsInput.value = ''; // เคลียร์ช่องข้อความรอโหลด
+    if(detailsInput) detailsInput.value = ''; 
     status.style.display = 'block';
     this.setHtmlAndIcons('report-status', '<i data-lucide="loader-2" class="loader-dark" style="border:none; animation: spin 1.5s linear infinite; width: 24px; height: 24px;"></i> กำลังดึงข้อมูล...');
 
@@ -1507,12 +1671,10 @@ const app = {
       const month = dObj.getMonth() + 1;
       const year = dObj.getFullYear();
       
-      // แปลงวันที่สำหรับใช้เรียก Report Key (เช่น 01/10/2026)
       const dd = String(dObj.getDate()).padStart(2, '0');
       const mm = String(month).padStart(2, '0');
       const dateKey = `${dd}/${mm}/${year}`;
 
-      // ดึงข้อมูล 2 อย่างพร้อมกัน: รายชื่อเข้างาน และ รายละเอียดงานที่จดไว้
       const [logs, reports] = await Promise.all([
         fetch(`${this.apiUrl}?action=getLogs&month=${month}&year=${year}`).then(r => r.json()),
         fetch(`${this.apiUrl}?action=getDailyReports&month=${month}&year=${year}`).then(r => r.json())
@@ -1522,7 +1684,6 @@ const app = {
       
       status.style.display = 'none';
       
-      // ถอดค่าและใส่ในช่อง Textarea หากพบว่ามีบันทึกของวันนั้น
       if (detailsInput && reports && !reports.error && reports[dateKey]) {
         detailsInput.value = reports[dateKey];
       }
@@ -1603,6 +1764,269 @@ const app = {
     } catch (e) {
       Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: e.message, confirmButtonColor: '#ef4444' });
     }
+  },
+
+  // --- ฟังก์ชันสำหรับเมนู สมุดบันทึกงานย้อนหลัง (อัปเกรด) ---
+  initWorkHistory() {
+    const d = new Date();
+    const mEl = document.getElementById('history-month');
+    const yEl = document.getElementById('history-year');
+    if(!mEl.getAttribute('data-init')) {
+      mEl.value = d.getMonth() + 1;
+      yEl.value = d.getFullYear();
+      mEl.setAttribute('data-init', 'true');
+    }
+    
+    const searchInput = document.getElementById('history-search-keyword');
+    if (searchInput) searchInput.value = ''; // เคลียร์ช่องค้นหา
+    
+    document.getElementById('history-list-view').style.display = 'block';
+    document.getElementById('history-detail-view').style.display = 'none';
+    this.loadWorkHistory();
+  },
+
+  async loadWorkHistory() {
+    const month = document.getElementById('history-month').value;
+    const year = document.getElementById('history-year').value;
+    const status = document.getElementById('history-status');
+    const container = document.getElementById('history-cards-container');
+    const paginationContainer = document.getElementById('history-pagination-container');
+    
+    container.innerHTML = '';
+    paginationContainer.innerHTML = '';
+    status.style.display = 'flex'; // อัปเดตให้แสดง Card Loading เต็มความกว้าง
+    this.setHtmlAndIcons('history-status', '<i data-lucide="loader-2" class="loader-dark" style="border:none; animation: spin 1.5s linear infinite; width: 36px; height: 36px; color: var(--primary);"></i><span>กำลังดึงข้อมูล...</span>');
+
+    if(!this.apiUrl) return this.setHtmlAndIcons('history-status', '<span style="color:var(--danger)">ไม่มี API URL</span>');
+
+    try {
+      const [logs, reports] = await Promise.all([
+        fetch(`${this.apiUrl}?action=getLogs&month=${month}&year=${year}`).then(r => r.json()),
+        fetch(`${this.apiUrl}?action=getDailyReports&month=${month}&year=${year}`).then(r => r.json())
+      ]);
+
+      if(logs && logs.error) throw new Error(logs.error);
+      
+      this.historyData = {};
+      
+      if(Array.isArray(logs)) {
+         logs.forEach(log => {
+           if(!log.date) return;
+           if(!this.historyData[log.date]) {
+             this.historyData[log.date] = { report: '', workers: {} };
+           }
+           if(!this.historyData[log.date].workers[log.name]) {
+             this.historyData[log.date].workers[log.name] = { in: '-', out: '-' };
+           }
+           if(log.type === 'เข้างาน') this.historyData[log.date].workers[log.name].in = log.time;
+           if(log.type === 'เลิกงาน') this.historyData[log.date].workers[log.name].out = log.time;
+         });
+      }
+
+      if(reports && !reports.error) {
+         Object.keys(reports).forEach(dateStr => {
+           if(!this.historyData[dateStr]) {
+             this.historyData[dateStr] = { report: '', workers: {} };
+           }
+           this.historyData[dateStr].report = reports[dateStr];
+         });
+      }
+
+      status.style.display = 'none';
+
+      // เรียงลำดับจากวันที่ล่าสุดขึ้นก่อนและเก็บไว้ใน Array ของ State
+      this.historySortedDates = Object.keys(this.historyData).sort((a, b) => {
+        const pa = a.split('/');
+        const pb = b.split('/');
+        if(pa.length !== 3 || pb.length !== 3) return 0;
+        const da = new Date(`${pa[2]}-${pa[1]}-${pa[0]}`);
+        const db = new Date(`${pb[2]}-${pb[1]}-${pb[0]}`);
+        return db - da; 
+      });
+
+      this.historyCurrentPage = 1;
+      this.renderWorkHistoryList();
+
+    } catch(e) {
+      status.style.display = 'flex';
+      this.setHtmlAndIcons('history-status', `<span style="color:var(--danger); display:flex; align-items:center; justify-content:center; gap:8px;"><i data-lucide="alert-circle"></i> เกิดข้อผิดพลาด: ${e.message}</span>`);
+    }
+  },
+
+  onSearchInput() {
+    this.historyCurrentPage = 1;
+    this.renderWorkHistoryList();
+  },
+
+  renderWorkHistoryList() {
+    const container = document.getElementById('history-cards-container');
+    const paginationContainer = document.getElementById('history-pagination-container');
+    const keyword = (document.getElementById('history-search-keyword').value || '').trim().toLowerCase();
+
+    let filteredDates = this.historySortedDates;
+    
+    // 1. ฟิลเตอร์ข้อมูลตาม Search Keyword
+    if (keyword) {
+      filteredDates = this.historySortedDates.filter(dateStr => {
+        const dayData = this.historyData[dateStr];
+        const reportText = (dayData.report || '').toLowerCase();
+        const workerNames = Object.keys(dayData.workers).join(' ').toLowerCase();
+        return reportText.includes(keyword) || workerNames.includes(keyword) || dateStr.includes(keyword);
+      });
+    }
+
+    // 2. คำนวณระบบแบ่งหน้า (Pagination)
+    const totalItems = filteredDates.length;
+    const totalPages = Math.ceil(totalItems / this.historyItemsPerPage) || 1;
+
+    if (this.historyCurrentPage > totalPages) this.historyCurrentPage = totalPages;
+    if (this.historyCurrentPage < 1) this.historyCurrentPage = 1;
+
+    const startIndex = (this.historyCurrentPage - 1) * this.historyItemsPerPage;
+    const endIndex = startIndex + this.historyItemsPerPage;
+    const paginatedDates = filteredDates.slice(startIndex, endIndex);
+
+    container.innerHTML = '';
+    paginationContainer.innerHTML = '';
+
+    if (paginatedDates.length === 0) {
+      container.innerHTML = '<div class="card-panel" style="text-align:center; color: var(--text-muted); padding: 40px; border-style: dashed; background: transparent; grid-column: 1 / -1;">ไม่พบข้อมูลที่ค้นหา</div>';
+      return;
+    }
+
+    // 3. แสดงผลเฉพาะรายการในหน้านั้นๆ
+    paginatedDates.forEach(dateStr => {
+      const dayData = this.historyData[dateStr];
+      const workerCount = Object.keys(dayData.workers).length;
+      
+      let snippet = '<span style="color:#94a3b8; font-style:italic;">ไม่มีรายละเอียดงานที่บันทึกไว้</span>';
+      if (dayData.report) {
+        snippet = dayData.report; // ใช้ CSS ตัดบรรทัด
+      }
+      
+      const thaiDate = this.formatThaiDate(dateStr);
+
+      const card = document.createElement('div');
+      card.className = 'card-panel';
+      card.style.cursor = 'pointer';
+      card.style.padding = '24px';
+      card.style.marginBottom = '0';
+      card.style.width = '100%';
+      card.style.boxSizing = 'border-box';
+      card.style.transition = 'all 0.2s ease';
+      card.onmouseover = () => { card.style.transform = 'translateY(-4px)'; card.style.borderColor = 'var(--primary)'; card.style.boxShadow = '0 12px 24px -4px rgba(79,70,229,0.15)'; };
+      card.onmouseout = () => { card.style.transform = 'translateY(0)'; card.style.borderColor = 'var(--border-color)'; card.style.boxShadow = '0 4px 12px -2px rgba(0,0,0,0.03)'; };
+      card.onclick = () => this.showHistoryDetail(dateStr);
+      
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <div style="font-weight: 700; font-size: 1.15em; color: var(--primary); display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="calendar-days" style="width:20px;height:20px;"></i> ${thaiDate}
+          </div>
+          <div style="background: rgba(16,185,129,0.15); color: #059669; padding: 6px 14px; border-radius: 20px; font-size: 0.9em; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="users" style="width:16px;height:16px;"></i> ${workerCount} คน
+          </div>
+        </div>
+        <div style="color: var(--text-main); font-size: 0.95em; line-height: 1.6; background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+          ${snippet}
+        </div>
+      `;
+      container.appendChild(card);
+    });
+
+    // 4. วาดปุ่ม Pagination แบบใหม่ (หน้าแรก, ตัวเลขไฮไลท์, หน้าสุดท้าย)
+    if (totalPages > 1) {
+      let pagesHtml = '';
+
+      let startPage = Math.max(1, this.historyCurrentPage - 2);
+      let endPage = Math.min(totalPages, this.historyCurrentPage + 2);
+
+      if (endPage - startPage < 4) {
+        if (startPage === 1) {
+          endPage = Math.min(totalPages, startPage + 4);
+        } else if (endPage === totalPages) {
+          startPage = Math.max(1, endPage - 4);
+        }
+      }
+
+      pagesHtml += `<button class="pagination-btn" onclick="app.goToHistoryPage(1)" ${this.historyCurrentPage === 1 ? 'disabled' : ''}><i data-lucide="chevrons-left" style="width: 16px; height: 16px;"></i> หน้าแรก</button>`;
+      pagesHtml += `<button class="pagination-btn" onclick="app.changeHistoryPage(-1)" ${this.historyCurrentPage === 1 ? 'disabled' : ''}><i data-lucide="chevron-left" style="width: 16px; height: 16px;"></i> ก่อนหน้า</button>`;
+
+      for (let i = startPage; i <= endPage; i++) {
+        const activeClass = i === this.historyCurrentPage ? 'active' : '';
+        pagesHtml += `<button class="pagination-btn ${activeClass}" onclick="app.goToHistoryPage(${i})">${i}</button>`;
+      }
+
+      pagesHtml += `<button class="pagination-btn" onclick="app.changeHistoryPage(1)" ${this.historyCurrentPage === totalPages ? 'disabled' : ''}>ถัดไป <i data-lucide="chevron-right" style="width: 16px; height: 16px;"></i></button>`;
+      pagesHtml += `<button class="pagination-btn" onclick="app.goToHistoryPage(${totalPages})" ${this.historyCurrentPage === totalPages ? 'disabled' : ''}>หน้าสุดท้าย <i data-lucide="chevrons-right" style="width: 16px; height: 16px;"></i></button>`;
+
+      paginationContainer.innerHTML = `
+        <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 32px; width: 100%; flex-wrap: wrap;">
+          ${pagesHtml}
+        </div>
+      `;
+    }
+
+    lucide.createIcons({ root: document.getElementById('history-list-view') });
+  },
+
+  changeHistoryPage(delta) {
+    this.goToHistoryPage(this.historyCurrentPage + delta);
+  },
+
+  goToHistoryPage(page) {
+    this.historyCurrentPage = page;
+    this.renderWorkHistoryList();
+    const listTop = document.getElementById('history-list-view').getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({ top: listTop, behavior: 'smooth' });
+  },
+
+  showHistoryDetail(dateStr) {
+    document.getElementById('history-list-view').style.display = 'none';
+    document.getElementById('history-detail-view').style.display = 'block';
+    
+    const thaiDate = this.formatThaiDate(dateStr);
+    this.setHtmlAndIcons('history-detail-title', `<i data-lucide="calendar" style="width:28px;height:28px;"></i> ประจำวันที่ ${thaiDate}`);
+    
+    const dayData = this.historyData[dateStr];
+    const detailTextEl = document.getElementById('history-detail-text');
+    
+    if(dayData.report) {
+      detailTextEl.innerText = dayData.report;
+      detailTextEl.style.color = 'var(--text-main)';
+      detailTextEl.style.fontStyle = 'normal';
+    } else {
+      detailTextEl.innerText = 'ไม่มีรายละเอียดการทำงานบันทึกไว้ในระบบ';
+      detailTextEl.style.color = 'var(--text-muted)';
+      detailTextEl.style.fontStyle = 'italic';
+    }
+
+    const tbody = document.getElementById('history-detail-tbody');
+    tbody.innerHTML = '';
+    
+    const workers = Object.keys(dayData.workers);
+    if(workers.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: var(--text-muted); padding: 30px;">ไม่มีผู้ปฏิบัติงานในวันนี้</td></tr>';
+    } else {
+      workers.forEach(name => {
+        const times = dayData.workers[name];
+        const tr = document.createElement('tr');
+        const inClass = times.in !== '-' ? 'type-in' : '';
+        const outClass = times.out !== '-' ? 'type-out' : '';
+        tr.innerHTML = `
+          <td style="font-weight: 600; color: #1e293b; font-size: 1.05em;">${name}</td>
+          <td class="${inClass}">${this.formatThaiTime(times.in)}</td>
+          <td class="${outClass}">${this.formatThaiTime(times.out)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' }); 
+  },
+
+  closeHistoryDetail() {
+    document.getElementById('history-list-view').style.display = 'block';
+    document.getElementById('history-detail-view').style.display = 'none';
   },
 
   // --- 4. Register View ---
@@ -1785,7 +2209,6 @@ const app = {
     try {
       const config = await fetch(this.apiUrl + '?action=getConfig').then(r => r.json());
 
-      // 1. ตรวจสอบว่ามี IP ออฟฟิศบันทึกไว้ และผู้ใช้ต่อ Wi-Fi ที่ IP ตรงกันหรือไม่
       if (config.officeIp) {
         try {
           this.setHtmlAndIcons('scan-gps-status', `<i data-lucide="wifi" style="width: 16px; height: 16px;"></i> กำลังตรวจสอบ Wi-Fi...`);
@@ -1796,14 +2219,13 @@ const app = {
             this.currentLat = config.lat || 0;
             this.currentLng = config.lng || 0;
             this.setHtmlAndIcons('scan-gps-status', `<i data-lucide="wifi" style="width: 16px; height: 16px;"></i> ยืนยันตำแหน่งผ่าน Wi-Fi ออฟฟิศแล้ว`);
-            return; // อนุญาตให้เช็คอินผ่านได้ทันที โดยไม่ต้องเช็ค GPS ต่อ
+            return; 
           }
         } catch(e) {
           console.warn("ตรวจสอบ IP ไม่สำเร็จ จะลองเช็ค GPS แทน", e);
         }
       }
 
-      // 2. ถ้าไม่ได้ต่อ Wi-Fi ออฟฟิศ จะเช็คตำแหน่ง GPS แบบปกติ
       this.setHtmlAndIcons('scan-gps-status', `<i data-lucide="map-pin" style="width: 16px; height: 16px;"></i> กำลังตรวจสอบพิกัด GPS...`);
       const pos = await this.getAccurateLocation();
       this.currentLat = pos.coords.latitude;
@@ -1902,7 +2324,6 @@ const app = {
     const btnGrid = document.getElementById('modal-action-grid');
     const timeLog = document.getElementById('modal-time-log');
     
-    // ตั้งสถานะกำลังตรวจสอบข้อมูลเบื้องต้น
     btnGrid.innerHTML = `
       <button class="btn btn-outline" disabled style="padding: 16px; opacity: 1; border-color: var(--primary); color: var(--primary); justify-content: center;">
         <i data-lucide="loader-2" class="loader-dark" style="animation: spin 1.5s linear infinite; width: 20px; height: 20px;"></i> ตรวจสอบสถานะวันนี้...
@@ -1913,7 +2334,6 @@ const app = {
 
     const status = await this.checkTodayStatus(name);
 
-    // สร้าง UI สำหรับแสดงเวลา
     let timeHtml = '';
     if (status.hasIn) {
       timeHtml += `
@@ -1939,7 +2359,6 @@ const app = {
       timeLog.style.display = 'none';
     }
 
-    // แสดงปุ่มแบบ "ปุ่มเดียว" อ้างอิงตามสถานะของวันนั้นๆ
     if (!status.hasIn) {
       btnGrid.innerHTML = `
         <button class="btn btn-success" id="btn-clock-in" onclick="app.submitAttendance('เข้างาน')" style="padding: 16px; font-size: 1.1em;">
