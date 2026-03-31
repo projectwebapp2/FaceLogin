@@ -362,6 +362,83 @@
     }
     .swal2-title { color: #1e3a8a !important; font-weight: 700 !important; }
 
+    /* ==========================================================================
+       PRINT STYLES (สำหรับปริ้น/ส่งออก PDF)
+       ========================================================================== */
+    @media print {
+      @page { size: A4 portrait; margin: 15mm; }
+      *, *::before, *::after { box-sizing: border-box !important; }
+      body { 
+        background: #ffffff !important; 
+        -webkit-print-color-adjust: exact; 
+        print-color-adjust: exact; 
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+      }
+      .app-container { padding: 0 !important; max-width: 100% !important; width: 100% !important; margin: 0 !important; }
+      
+      /* ซ่อนส่วนที่ไม่ต้องการปริ้น */
+      .header, .top-nav, button, .admin-trigger, #history-list-view, .print-hide { 
+        display: none !important; 
+      }
+      
+      /* จัดรูปแบบ Card ให้เหมาะกับกระดาษ */
+      .card-panel { 
+        box-shadow: none !important; 
+        border: none !important; 
+        padding: 0 !important; 
+        margin: 0 !important;
+        background: transparent !important;
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      
+      /* ปรับสีข้อความและไอคอนให้เป็นดำหรือเข้ม */
+      .title, .subtitle, * { color: #000 !important; }
+      svg { stroke: #000 !important; }
+      
+      /* จัดรูปแบบกล่องข้อความรายละเอียด */
+      #history-detail-text {
+        border: 1px solid #ccc !important;
+        background: #f9f9f9 !important;
+        padding: 16px !important;
+        color: #000 !important;
+        width: 100% !important;
+        word-wrap: break-word !important;
+      }
+      
+      /* จัดรูปแบบตาราง */
+      .table-container { 
+        border: none !important; 
+        box-shadow: none !important; 
+        overflow: visible !important; 
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      table { 
+        border-collapse: collapse !important; 
+        width: 100% !important; 
+        max-width: 100% !important;
+        border: 1px solid #ccc !important; 
+        table-layout: auto !important; 
+      }
+      th, td { 
+        border: 1px solid #ccc !important; 
+        padding: 12px !important; 
+        color: #000 !important; 
+        /* ล้างการตั้งค่า nowrap เดิมทิ้ง เพื่อให้ข้อความตัดขึ้นบรรทัดใหม่ได้ ป้องกันตารางล้นหน้ากระดาษ */
+        white-space: normal !important; 
+        word-wrap: break-word !important;
+      }
+      th { background-color: #f0f0f0 !important; }
+      
+      /* บังคับแสดงผลเฉพาะหน้า Detail */
+      #view-work-history { display: block !important; width: 100% !important; }
+      #history-detail-view { display: block !important; width: 100% !important; }
+    }
+
     /* Image Modal (สำหรับดูรูปพนักงาน) */
     .image-modal-overlay {
       display: none; position: fixed; inset: 0;
@@ -827,6 +904,7 @@
         <table id="report-table">
           <thead>
             <tr>
+              <th style="width: 60px; text-align: center;">ลำดับ</th>
               <th>วันที่</th>
               <th>เวลา</th>
               <th>ชื่อพนักงาน</th>
@@ -882,6 +960,7 @@
           <table id="daily-table">
             <thead>
               <tr>
+                <th style="width: 60px; text-align: center;">ลำดับ</th>
                 <th>ชื่อพนักงาน</th>
                 <th>เข้างาน</th>
                 <th>เลิกงาน</th>
@@ -899,6 +978,7 @@
         <table id="employee-table">
           <thead>
             <tr>
+              <th style="width: 60px; text-align: center;">ลำดับ</th>
               <th>รูปถ่าย</th>
               <th>ชื่อพนักงาน</th>
               <th>วัน-เวลาที่ลงทะเบียน</th>
@@ -983,9 +1063,14 @@
 
     <!-- Detail View: แสดงรายละเอียดเมื่อคลิกแต่ละวัน (Full Width) -->
     <div id="history-detail-view" style="display: none; width: 100%;">
-      <button class="btn btn-outline" style="margin-bottom: 20px; width: auto; padding: 10px 20px; background: white;" onclick="app.closeHistoryDetail()">
-        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> กลับไปหน้ารายการ
-      </button>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;" class="print-hide">
+        <button class="btn btn-outline" style="width: auto; padding: 10px 20px; background: white;" onclick="app.closeHistoryDetail()">
+          <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> กลับไปหน้ารายการ
+        </button>
+        <button class="btn btn-primary" style="width: auto; padding: 10px 20px;" onclick="window.print()">
+          <i data-lucide="printer" style="width: 18px; height: 18px;"></i> พิมพ์ / ส่งออก PDF
+        </button>
+      </div>
       
       <div class="card-panel" style="padding: 32px; width: 100%;">
         <div style="font-size: 1.4em; font-weight: 700; color: var(--primary); margin-bottom: 32px; text-align: center; display: flex; justify-content: center; align-items: center; gap: 10px;" id="history-detail-title">
@@ -1006,6 +1091,7 @@
           <table style="width: 100%;">
             <thead>
               <tr>
+                <th style="width: 60px; text-align: center;">ลำดับ</th>
                 <th>ชื่อพนักงาน</th>
                 <th>เข้างาน</th>
                 <th>เลิกงาน</th>
@@ -1185,7 +1271,16 @@ const app = {
   },
 
   // --- 2. Admin & Config ---
-  showAdminLogin() { this.navigate('view-admin-login'); },
+  showAdminLogin() { 
+    // ตรวจสอบว่ามี Session ของแอดมินที่ยังไม่หมดอายุ (1 ชั่วโมง) หรือไม่
+    const expiry = localStorage.getItem('adminExpiry');
+    if (expiry && Date.now() < parseInt(expiry, 10)) {
+      this.navigate('view-admin-dashboard'); // ข้ามไปหน้าแผงควบคุมเลย
+    } else {
+      localStorage.removeItem('adminExpiry'); // ล้างข้อมูลหากหมดเวลา
+      this.navigate('view-admin-login'); // ไปหน้าล็อกอินปกติ
+    }
+  },
   
   async verifyAdmin() {
     const pin = document.getElementById('admin-pin').value;
@@ -1208,6 +1303,8 @@ const app = {
       
       if (data.success) {
         document.getElementById('admin-pin').value = '';
+        // บันทึกเวลาหมดอายุ 1 ชั่วโมง (3,600,000 มิลลิวินาที) นับจากเวลาปัจจุบัน
+        localStorage.setItem('adminExpiry', Date.now() + 3600000);
         this.navigate('view-admin-dashboard');
       } else {
         msgEl.innerText = data.error || 'รหัสผ่านไม่ถูกต้อง';
@@ -1220,7 +1317,10 @@ const app = {
     this.setHtmlAndIcons('btn-verify-admin', '<i data-lucide="log-in" style="width: 20px; height: 20px;"></i> เข้าสู่ระบบ');
   },
   
-  adminLogout() { this.navigate('view-home'); },
+  adminLogout() { 
+    localStorage.removeItem('adminExpiry'); // ล้างค่า Session เมื่อกดออกจากระบบ
+    this.navigate('view-home'); 
+  },
 
   async loadConfigData() {
     document.getElementById('cfg-api').value = this.apiUrl;
@@ -1398,7 +1498,7 @@ const app = {
       status.style.display = 'none';
       
       if(!Array.isArray(employees) || employees.length === 0) {
-         tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: var(--text-muted); padding: 30px;">ไม่มีข้อมูลพนักงานในระบบ</td></tr>';
+         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--text-muted); padding: 30px;">ไม่มีข้อมูลพนักงานในระบบ</td></tr>';
          return;
       }
 
@@ -1411,7 +1511,7 @@ const app = {
         }
       });
 
-      Object.values(uniqueEmployees).forEach(emp => {
+      Object.values(uniqueEmployees).forEach((emp, index) => {
         const tr = document.createElement('tr');
         
         let photoHtml = '<div style="width: 56px; height: 56px; background: #e2e8f0; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #94a3b8;"><i data-lucide="user" style="width: 24px; height: 24px;"></i></div>';
@@ -1432,6 +1532,7 @@ const app = {
         }
 
         tr.innerHTML = `
+          <td style="text-align: center; color: var(--text-muted); font-weight: 600;">${index + 1}</td>
           <td style="padding: 12px 20px; width: 80px;">${photoHtml}</td>
           <td style="font-weight: 600; color: #1e293b; font-size: 1.1em; vertical-align: middle;">${emp.name}</td>
           <td style="vertical-align: middle;">
@@ -1484,13 +1585,13 @@ const app = {
       
       status.style.display = 'none';
       if(!Array.isArray(logs) || logs.length === 0) {
-         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 30px;">ไม่มีข้อมูลในเดือนนี้</td></tr>';
+         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted); padding: 30px;">ไม่มีข้อมูลในเดือนนี้</td></tr>';
          userSelect.innerHTML = '<option>ไม่มีข้อมูล</option>';
          calendarArea.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding: 40px;">ไม่มีบันทึกการทำงานในเดือนนี้</div>';
          return;
       }
 
-      logs.forEach(log => {
+      logs.forEach((log, index) => {
         let dateParts = log.date.split('/'); 
         let dayNum = parseInt(dateParts[0], 10);
         
@@ -1513,6 +1614,7 @@ const app = {
         const mapLink = log.map && log.map !== '-' ? `<a href="${log.map}" target="_blank" style="color:var(--primary); text-decoration: none; display: flex; align-items: center; gap: 4px;"><i data-lucide="map-pin" style="width: 16px; height: 16px;"></i> แผนที่</a>` : '-';
         
         tr.innerHTML = `
+          <td style="text-align: center; color: var(--text-muted); font-weight: 600;">${index + 1}</td>
           <td style="font-weight: 500;">${this.formatThaiDate(log.date)}</td>
           <td>${this.formatThaiTime(log.time)}</td>
           <td style="font-weight: 600; color: #1e293b;">${log.name}</td>
@@ -1700,7 +1802,7 @@ const app = {
       }) : [];
 
       if(dailyLogs.length === 0) {
-         tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: var(--text-muted); padding: 30px;">ไม่มีผู้บันทึกเวลาในวันนี้</td></tr>';
+         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--text-muted); padding: 30px;">ไม่มีผู้บันทึกเวลาในวันนี้</td></tr>';
          return;
       }
 
@@ -1712,11 +1814,13 @@ const app = {
         if(log.type === 'เลิกงาน') summaryData[log.name].out = log.time;
       });
 
+      let seqIndex = 1;
       for (const [name, times] of Object.entries(summaryData)) {
         const tr = document.createElement('tr');
         const inClass = times.in !== '-' ? 'type-in' : '';
         const outClass = times.out !== '-' ? 'type-out' : '';
         tr.innerHTML = `
+          <td style="text-align: center; color: var(--text-muted); font-weight: 600;">${seqIndex++}</td>
           <td style="font-weight: 600; color: #1e293b;">${name}</td>
           <td class="${inClass}">${this.formatThaiTime(times.in)}</td>
           <td class="${outClass}">${this.formatThaiTime(times.out)}</td>
@@ -2006,14 +2110,15 @@ const app = {
     
     const workers = Object.keys(dayData.workers);
     if(workers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: var(--text-muted); padding: 30px;">ไม่มีผู้ปฏิบัติงานในวันนี้</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--text-muted); padding: 30px;">ไม่มีผู้ปฏิบัติงานในวันนี้</td></tr>';
     } else {
-      workers.forEach(name => {
+      workers.forEach((name, index) => {
         const times = dayData.workers[name];
         const tr = document.createElement('tr');
         const inClass = times.in !== '-' ? 'type-in' : '';
         const outClass = times.out !== '-' ? 'type-out' : '';
         tr.innerHTML = `
+          <td style="text-align: center; color: var(--text-muted); font-weight: 600;">${index + 1}</td>
           <td style="font-weight: 600; color: #1e293b; font-size: 1.05em;">${name}</td>
           <td class="${inClass}">${this.formatThaiTime(times.in)}</td>
           <td class="${outClass}">${this.formatThaiTime(times.out)}</td>
