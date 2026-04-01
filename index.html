@@ -1176,6 +1176,8 @@ const app = {
   matchedName: null,
   regCounter: 0,
   calendarData: {},
+  
+  // State ตัวแปรสำหรับเก็บประวัติและ Pagination
   historyData: {}, 
   historySortedDates: [],
   historyCurrentPage: 1,
@@ -1265,8 +1267,11 @@ const app = {
   },
 
   async loadAIModels(badgeId) {
-    if(this.modelsLoaded) return true;
-    this.setHtmlAndIcons(badgeId, '<i data-lucide="loader-2" class="loader-dark" style="border:none; animation: spin 1.5s linear infinite; width: 18px; height: 18px;"></i> โหลด AI Model (อาจใช้เวลา)...');
+    if(this.modelsLoaded) {
+      this.setHtmlAndIcons(badgeId, '<i data-lucide="check-circle-2" style="width: 18px; height: 18px; color: var(--success);"></i> AI พร้อมใช้งาน');
+      return true;
+    }
+    this.setHtmlAndIcons(badgeId, '<i data-lucide="loader-2" class="loader-dark" style="border:none; animation: spin 1.5s linear infinite; width: 18px; height: 18px;"></i> โหลด AI Model...');
     const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
     try {
       await Promise.all([
@@ -1280,7 +1285,7 @@ const app = {
     } catch (e) {
       this.setHtmlAndIcons(badgeId, '<i data-lucide="x-circle" style="width: 18px; height: 18px; color: var(--danger);"></i> โหลดล้มเหลว');
       Swal.fire({ icon: 'error', title: 'โหลด AI ล้มเหลว', text: e.message, confirmButtonColor: '#4f46e5' });
-      return false;
+      throw new Error("โหลด AI Model ล้มเหลว");
     }
   },
 
@@ -1325,7 +1330,7 @@ const app = {
       
       if (data.success) {
         document.getElementById('admin-pin').value = '';
-        localStorage.setItem('adminExpiry', Date.now() + 3600000);
+        localStorage.setItem('adminExpiry', Date.now() + 3600000); // เก็บ 1 ชม.
         this.navigate('view-admin-dashboard');
       } else {
         msgEl.innerText = data.error || 'รหัสผ่านไม่ถูกต้อง';
@@ -2185,21 +2190,23 @@ const app = {
     btn.classList.remove('btn-success');
     btn.classList.add('btn-primary');
 
-    const ok = await this.loadAIModels('reg-badge');
-    if(!ok) return;
+    // 🛠️ โหลดกล้องและ AI ไปพร้อมๆ กัน ไม่ต้องรอทีละคิว
+    const pAI = this.loadAIModels('reg-badge');
+    const pCamera = navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } 
+    }).then(async stream => {
+      this.currentStream = stream;
+      const video = document.getElementById('reg-video');
+      video.srcObject = stream;
+      await video.play().catch(e=>console.log(e));
+    }).catch(e => { throw new Error('เปิดกล้องไม่ได้ กรุณาอนุญาตสิทธิ์'); });
 
     try {
-      // 🛠️ ปรับลดความละเอียดวิดีโอ เพื่อให้ AI ไม่ต้องคิดเลขเยอะเกินความจำเป็น (ภาพลื่นขึ้น)
-      this.currentStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } 
-      });
-      const video = document.getElementById('reg-video');
-      video.srcObject = this.currentStream;
-      await video.play().catch(e=>console.log(e)); 
-      this.setHtmlAndIcons('reg-badge', '<i data-lucide="camera" style="width: 18px; height: 18px;"></i> กล้องพร้อมใช้งาน');
+      await Promise.all([pAI, pCamera]);
+      this.setHtmlAndIcons('reg-badge', '<i data-lucide="camera" style="width: 18px; height: 18px;"></i> กล้องและ AI พร้อมใช้งาน');
       btn.disabled = false; 
     } catch(e) {
-      this.setHtmlAndIcons('reg-badge', '<i data-lucide="camera-off" style="width: 18px; height: 18px;"></i> เปิดกล้องไม่ได้');
+      this.setHtmlAndIcons('reg-badge', `<i data-lucide="alert-circle" style="width: 18px; height: 18px; color: var(--danger);"></i> ${e.message}`);
     }
   },
 
@@ -2302,74 +2309,66 @@ const app = {
     document.getElementById('btn-start-scan').style.display = 'flex';
     document.getElementById('btn-start-scan').disabled = true;
     document.getElementById('scan-line').style.display = 'none';
-    const sysStatus = document.getElementById('scan-sys-status');
-    const gpsStatus = document.getElementById('scan-gps-status');
     
     if(!this.apiUrl) {
       this.setHtmlAndIcons('scan-sys-status', '<span style="color:var(--danger)">ยังไม่ได้ตั้งค่า API</span>');
       return;
     }
 
-    try {
-      this.setHtmlAndIcons('scan-sys-status', '<i data-lucide="loader-2" class="loader-dark" style="border:none; animation: spin 1.5s linear infinite; width: 20px; height: 20px; color: var(--text-muted);"></i> 1/3 ตรวจสอบเครือข่าย/GPS...');
-      await this.checkGPS(gpsStatus);
-    } catch(e) {
-      this.setHtmlAndIcons('scan-sys-status', `<span style="color:var(--danger)"><i data-lucide="x-circle" style="width: 20px; height: 20px; vertical-align: middle;"></i> ${e.message}</span>`);
-      return; 
-    }
+    this.setHtmlAndIcons('scan-sys-status', '<i data-lucide="loader-2" class="loader-dark" style="border:none; animation: spin 1.5s linear infinite; width: 20px; height: 20px; color: var(--text-muted);"></i> กำลังเตรียมระบบทั้งหมด...');
+    this.setHtmlAndIcons('scan-gps-status', '<i data-lucide="loader-2" class="loader-dark" style="border:none; animation: spin 1.5s linear infinite; width: 16px; height: 16px;"></i> ตรวจสอบตำแหน่ง...');
 
-    try {
-      this.setHtmlAndIcons('scan-sys-status', '<i data-lucide="loader-2" class="loader-dark" style="border:none; animation: spin 1.5s linear infinite; width: 20px; height: 20px; color: var(--text-muted);"></i> กำลังเปิดกล้อง...');
-      
-      // 🛠️ ปรับลดความละเอียดวิดีโอตอนสแกนด้วย (ลื่นไหลขึ้นมากๆ)
-      this.currentStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } 
-      });
+    // 🛠️ สร้าง Promise Tasks ให้ทำงานพร้อมกันทีเดียว (Parallel Execution)
+    
+    // 1. Task เปิดกล้อง
+    const pCamera = navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } 
+    }).then(async stream => {
+      this.currentStream = stream;
       const video = document.getElementById('scan-video');
-      video.srcObject = this.currentStream;
+      video.srcObject = stream;
       await video.play().catch(e=>console.log(e)); 
-    } catch(e) {
-      this.setHtmlAndIcons('scan-sys-status', '<span style="color:var(--danger)"><i data-lucide="camera-off" style="width: 20px; height: 20px; vertical-align: middle;"></i> เปิดกล้องไม่ได้ กรุณาอนุญาตให้สิทธิ์</span>');
-      return;
-    }
+    }).catch(e => { throw new Error('เปิดกล้องไม่ได้ กรุณาอนุญาตสิทธิ์'); });
 
-    this.setHtmlAndIcons('scan-sys-status', '<i data-lucide="loader-2" class="loader-dark" style="border:none; animation: spin 1.5s linear infinite; width: 20px; height: 20px; color: var(--text-muted);"></i> 2/3 โหลดระบบ AI...');
-    const aiOk = await this.loadAIModels('scan-badge');
-    if(!aiOk) return;
+    // 2. Task ดึงข้อมูลและตรวจสอบ GPS
+    const pGPS = this.checkGPS();
 
-    this.setHtmlAndIcons('scan-sys-status', '<i data-lucide="loader-2" class="loader-dark" style="border:none; animation: spin 1.5s linear infinite; width: 20px; height: 20px; color: var(--text-muted);"></i> 3/3 ดึงฐานข้อมูล...');
+    // 3. Task โหลด AI Model
+    const pAI = this.loadAIModels('scan-badge');
+
+    // 4. Task ดึงรายชื่อพนักงานจาก Google Sheets
+    const pDB = fetch(this.apiUrl + '?action=getKnownFaces')
+      .then(r => r.json())
+      .then(data => {
+        if(!Array.isArray(data) || data.length === 0) throw new Error("ไม่พบข้อมูลพนักงานในระบบ");
+        this.knownFaces = data.map(u => ({ name: u.label, descriptor: new Float32Array(u.descriptor) }));
+      }).catch(e => { throw new Error('ดึงข้อมูลพนักงานล้มเหลว'); });
+
+    // สั่งให้ทั้ง 4 Tasks วิ่งพร้อมกัน
     try {
-      const data = await fetch(this.apiUrl + '?action=getKnownFaces').then(r => r.json());
-      if(data.length === 0) throw new Error("ไม่พบข้อมูลพนักงาน");
-      this.knownFaces = data.map(u => ({ name: u.label, descriptor: new Float32Array(u.descriptor) }));
+      await Promise.all([pCamera, pGPS, pAI, pDB]);
       
       this.setHtmlAndIcons('scan-sys-status', '<span style="color:var(--success); font-weight: 700;"><i data-lucide="check-circle-2" style="width: 20px; height: 20px; vertical-align: middle;"></i> ระบบพร้อมใช้งาน</span>');
       document.getElementById('btn-start-scan').disabled = false;
       this.setHtmlAndIcons('scan-badge', '<i data-lucide="scan" style="width: 18px; height: 18px;"></i> กล้องพร้อมแล้ว แตะเพื่อสแกน');
     } catch(e) {
-      this.setHtmlAndIcons('scan-sys-status', `<span style="color:var(--danger)"><i data-lucide="x-circle" style="width: 20px; height: 20px; vertical-align: middle;"></i> Error: ${e.message}</span>`);
+      this.setHtmlAndIcons('scan-sys-status', `<span style="color:var(--danger); font-weight: 600;"><i data-lucide="alert-circle" style="width: 20px; height: 20px; vertical-align: middle;"></i> ${e.message}</span>`);
     }
   },
 
-  async checkGPS(statusEl) {
+  async checkGPS() {
     try {
-      const config = await fetch(this.apiUrl + '?action=getConfig').then(r => r.json());
+      // 🛠️ ดึง Config จาก Google Sheets และ IPify พร้อมกัน
+      const [config, ipData] = await Promise.all([
+        fetch(this.apiUrl + '?action=getConfig').then(r => r.json()),
+        fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ ip: null }))
+      ]);
 
-      if (config.officeIp) {
-        try {
-          this.setHtmlAndIcons('scan-gps-status', `<i data-lucide="wifi" style="width: 16px; height: 16px;"></i> กำลังตรวจสอบ Wi-Fi...`);
-          const ipRes = await fetch('https://api.ipify.org?format=json');
-          const ipData = await ipRes.json();
-          
-          if (ipData.ip === config.officeIp) {
-            this.currentLat = config.lat || 0;
-            this.currentLng = config.lng || 0;
-            this.setHtmlAndIcons('scan-gps-status', `<i data-lucide="wifi" style="width: 16px; height: 16px;"></i> ยืนยันตำแหน่งผ่าน Wi-Fi ออฟฟิศแล้ว`);
-            return; 
-          }
-        } catch(e) {
-          console.warn("ตรวจสอบ IP ไม่สำเร็จ จะลองเช็ค GPS แทน", e);
-        }
+      if (config.officeIp && ipData.ip === config.officeIp) {
+        this.currentLat = config.lat || 0;
+        this.currentLng = config.lng || 0;
+        this.setHtmlAndIcons('scan-gps-status', `<i data-lucide="wifi" style="width: 16px; height: 16px;"></i> ยืนยันตำแหน่งผ่าน Wi-Fi ออฟฟิศแล้ว`);
+        return; 
       }
 
       this.setHtmlAndIcons('scan-gps-status', `<i data-lucide="map-pin" style="width: 16px; height: 16px;"></i> กำลังตรวจสอบพิกัด GPS...`);
@@ -2408,11 +2407,9 @@ const app = {
 
     // 🛠️ เปลี่ยนจากการใช้ setInterval เป็น Recursive Async Function เพื่อป้องกันเครื่องค้าง
     const scanFrame = async () => {
-      // ถ้าเปลี่ยนหน้า หรือ กล้องดับ ให้หยุดทำงานทันที
       if (this.currentView !== 'view-scan' || video.paused || video.ended) return;
 
       try {
-        // 🛠️ ลด minConfidence เพื่อให้ AI ตรวจเจอโครงหน้าได้ไวขึ้นตั้งแต่วินาทีแรก
         const options = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 });
         const detection = await faceapi.detectSingleFace(video, options).withFaceLandmarks().withFaceDescriptor();
         
@@ -2424,10 +2421,9 @@ const app = {
           });
 
           if (best.distance < MATCH_THRESHOLD) {
-            // เจอหน้าและตรงกับฐานข้อมูล: สั่งหยุดการทำซ้ำทันที
             if(this.scanInterval) clearTimeout(this.scanInterval);
             this.showConfirmModal(best.name, best.distance);
-            return; // ออกจาก Loop การสแกน
+            return; 
           } else {
             this.setHtmlAndIcons('scan-badge', `<i data-lucide="user-x" style="width: 18px; height: 18px;"></i> ไม่รู้จัก (${best.distance.toFixed(2)})`);
           }
@@ -2436,11 +2432,9 @@ const app = {
         console.log("Scan frame error:", e);
       }
 
-      // วนลูปรอบถัดไป (ตั้งเวลาหน่วงเล็กน้อยเพื่อให้ Browser ได้พักหายใจ ไม่ค้าง)
       this.scanInterval = setTimeout(scanFrame, 200); 
     };
 
-    // สั่งเริ่มลูปการสแกนครั้งแรก
     scanFrame();
   },
 
