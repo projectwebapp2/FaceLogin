@@ -1037,7 +1037,6 @@
 
         <div style="position: relative;">
           <i data-lucide="search" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 18px; height: 18px;"></i>
-          <!-- อัปเดต oninput ให้เรียกใช้ onSearchInput เพื่อรีเซ็ตกลับหน้า 1 อัตโนมัติ -->
           <input type="text" id="history-search-keyword" class="form-control" style="padding-left: 44px; width: 100%; box-sizing: border-box;" placeholder="ค้นหาข้อความรายละเอียดงาน หรือ ชื่อพนักงาน..." oninput="app.onSearchInput()">
         </div>
       </div>
@@ -1910,7 +1909,6 @@ const app = {
            if(!this.historyData[log.date].workers[log.name]) this.historyData[log.date].workers[log.name] = { in: '-', out: '-' };
            if(log.type === 'เข้างาน') this.historyData[log.date].workers[log.name].in = log.time;
            
-           // เก็บรายงานของพนักงานด้วย (ถ้ามี)
            if(log.type === 'เลิกงาน') {
              this.historyData[log.date].workers[log.name].out = log.time;
              this.historyData[log.date].workers[log.name].empReport = log.empReport || '';
@@ -2419,8 +2417,8 @@ const app = {
       if (canReport) {
         reportHtml = `
           <div style="margin-bottom: 12px; text-align: left;">
-            <label style="font-size: 0.85em; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; display: block;">รายงานผลปฏิบัติงานวันนี้ (ถ้ามี)</label>
-            <textarea id="emp-report-input" class="form-control" rows="2" placeholder="พิมพ์รายงานที่นี่..." style="resize: vertical; min-height: 60px; font-size: 0.9em; padding: 10px;"></textarea>
+            <label style="font-size: 0.85em; color: var(--danger); font-weight: 600; margin-bottom: 4px; display: block;">* จำเป็นต้องกรอก: รายงานผลปฏิบัติงานวันนี้</label>
+            <textarea id="emp-report-input" class="form-control" rows="2" placeholder="พิมพ์รายงานที่นี่..." style="resize: vertical; min-height: 60px; font-size: 0.9em; padding: 10px; border: 1px solid var(--warning);"></textarea>
           </div>
         `;
       }
@@ -2461,13 +2459,28 @@ const app = {
   },
 
   async submitAttendance(typeStr) {
-    const btnIn = document.getElementById('btn-clock-in'); const btnOut = document.getElementById('btn-clock-out');
-    if(btnIn) { btnIn.disabled = true; this.setHtmlAndIcons('btn-clock-in', '<i data-lucide="loader-2" class="loader-dark" style="animation: spin 1.5s linear infinite; width: 22px; height: 22px; border-color: transparent; border-top-color: white;"></i> กำลังบันทึก...'); }
-    if(btnOut) { btnOut.disabled = true; this.setHtmlAndIcons('btn-clock-out', '<i data-lucide="loader-2" class="loader-dark" style="animation: spin 1.5s linear infinite; width: 22px; height: 22px; border-color: transparent; border-top-color: white;"></i> กำลังบันทึก...'); }
-
     let empReportText = '';
     const reportInput = document.getElementById('emp-report-input');
-    if (reportInput) empReportText = reportInput.value.trim();
+    
+    // การตรวจสอบ: บังคับกรอกรายงานถ้ามีช่องให้กรอก
+    if (typeStr === 'เลิกงาน' && reportInput) {
+      empReportText = reportInput.value.trim();
+      if (empReportText === '') {
+        Swal.fire({ 
+          icon: 'warning', 
+          title: 'กรุณากรอกรายงาน', 
+          text: 'คุณต้องกรอกผลการปฏิบัติงานวันนี้ก่อน จึงจะสามารถบันทึกเลิกงานได้', 
+          confirmButtonColor: '#f59e0b' 
+        });
+        return; // หยุดการทำงาน ไม่ให้โหลด
+      }
+    }
+
+    const btnIn = document.getElementById('btn-clock-in'); 
+    const btnOut = document.getElementById('btn-clock-out');
+    
+    if(btnIn) { btnIn.disabled = true; this.setHtmlAndIcons('btn-clock-in', '<i data-lucide="loader-2" class="loader-dark" style="animation: spin 1.5s linear infinite; width: 22px; height: 22px; border-color: transparent; border-top-color: white;"></i> กำลังบันทึก...'); }
+    if(btnOut) { btnOut.disabled = true; this.setHtmlAndIcons('btn-clock-out', '<i data-lucide="loader-2" class="loader-dark" style="animation: spin 1.5s linear infinite; width: 22px; height: 22px; border-color: transparent; border-top-color: white;"></i> กำลังบันทึก...'); }
 
     try {
       await fetch(this.apiUrl, { 
