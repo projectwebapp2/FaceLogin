@@ -655,7 +655,7 @@
           <input type="password" id="admin-pin" class="form-control" placeholder="••••••••" style="text-align: center; font-size: 1.2em; letter-spacing: 2px;">
         </div>
         <div style="text-align: center; font-size: 0.85em; color: var(--text-muted); margin-bottom: 24px;">
-          <!-- * กรณีฉุกเฉินเชื่อมต่อ API ไม่ได้ ใช้รหัสสำรอง: <b>recovery123</b> -->
+         <!--  * กรณีฉุกเฉินเชื่อมต่อ API ไม่ได้ ใช้รหัสสำรอง: <b>recovery123</b> -->
         </div>
         <button id="btn-verify-admin" class="btn btn-primary" onclick="app.verifyAdmin()" style="padding: 16px; font-size: 1.1em;">
           <i data-lucide="log-in" style="width: 20px; height: 20px;"></i> เข้าสู่ระบบ
@@ -724,6 +724,7 @@
         </div>
         <div class="form-group">
           <label>API URL (รองรับไฟล์ api.php หรือ Google Apps Script)</label>
+          <!-- ⚠️ สำคัญ: ใส่ URL API ของคุณตรงนี้ ก่อนอัปโหลดไฟล์ HTML เพื่อแก้ปัญหามือถือพนักงานไม่อัปเดต URL -->
           <input type="url" id="cfg-api" class="form-control" placeholder="https://yourdomain.com/api.php หรือ https://script.google...">
         </div>
       </div>
@@ -1176,8 +1177,7 @@ window.fetch = function() {
   return originalFetch(resource, config);
 };
 
-// ⚠️ สำคัญมาก! คุณต้องเปลี่ยน URL บรรทัดล่างนี้ เป็นลิงก์ PHP API (Ngrok) ของคุณ 
-// เพื่อให้มือถือทุกเครื่องเปลี่ยนมาใช้ API ใหม่โดยอัตโนมัติ 100%
+// ⚠️ สำคัญมาก! เปลี่ยน URL ด้านล่างให้เป็น URL ปัจจุบันของ Ngrok ก่อนนำไฟล์ขึ้น Github
 const HARDCODED_API_URL = 'https://ddae-171-7-87-90.ngrok-free.app/facelogin/api.php';
 const MATCH_THRESHOLD = 0.48; 
 
@@ -1522,10 +1522,14 @@ const app = {
         method: 'POST', 
         body: JSON.stringify({ action: 'saveConfig', lat, lng, radius: rad, officeIp: officeIp, adminPin: adminPin, superadminPin: superadminPin, empReportAccess: empReportAccess })
       });
-      await res.json();
-      msg.innerHTML = '<span style="color:var(--success)">บันทึกตั้งค่าเรียบร้อย</span>';
-      document.getElementById('cfg-admin-pin').value = ''; 
-      if(document.getElementById('cfg-superadmin-pin')) document.getElementById('cfg-superadmin-pin').value = '';
+      const data = await res.json();
+      if(data.success) {
+        msg.innerHTML = '<span style="color:var(--success)">บันทึกตั้งค่าเรียบร้อย</span>';
+        document.getElementById('cfg-admin-pin').value = ''; 
+        if(document.getElementById('cfg-superadmin-pin')) document.getElementById('cfg-superadmin-pin').value = '';
+      } else {
+        msg.innerHTML = `<span style="color:var(--danger)">Error: ${data.error || 'Failed to save config'}</span>`;
+      }
     } catch(e) {
       msg.innerHTML = `<span style="color:var(--danger)">Error: ${e.message}</span>`;
     }
@@ -1596,7 +1600,7 @@ const app = {
   },
 
   // ---------------------------------------------------------
-  // SUPERADMIN - CRUD Functions
+  // SUPERADMIN - CRUD Functions (FIXED)
   // ---------------------------------------------------------
   async editUserRecord(oldName) {
     const pin = localStorage.getItem('adminTokenPin');
@@ -1614,24 +1618,40 @@ const app = {
       try {
         Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
         
-        const allEmp = await fetch(`${this.apiUrl}?action=getEmployeeDetails`).then(r => r.json());
+        const allEmpResponse = await fetch(`${this.apiUrl}?action=getEmployeeDetails`);
+        const allEmp = await allEmpResponse.json();
+        if (allEmp.error) throw new Error(allEmp.error);
+
         const recordsToEdit = Array.isArray(allEmp) ? allEmp.filter(e => e.name === oldName) : [];
-        
+        let hasError = false;
+        let errorMessage = 'เกิดข้อผิดพลาดในการแก้ไข';
+
         if(recordsToEdit.length > 0) {
-            const editPromises = recordsToEdit.map(rec => 
-               fetch(this.apiUrl, {
+            for (const rec of recordsToEdit) {
+               const res = await fetch(this.apiUrl, {
                  method: 'POST',
                  body: JSON.stringify({ action: 'editUser', id: rec.id, newName: newName, oldName: oldName, pin: pin })
-               })
-            );
-            await Promise.all(editPromises);
+               });
+               const data = await res.json();
+               if (!data.success) {
+                   hasError = true;
+                   errorMessage = data.error || errorMessage;
+               }
+            }
         } else {
-            await fetch(this.apiUrl, {
+            const res = await fetch(this.apiUrl, {
                method: 'POST',
                body: JSON.stringify({ action: 'editUser', newName: newName, oldName: oldName, pin: pin })
             });
+            const data = await res.json();
+            if (!data.success) {
+                hasError = true;
+                errorMessage = data.error || errorMessage;
+            }
         }
         
+        if (hasError) throw new Error(errorMessage);
+
         await Swal.fire({ icon: 'success', title: 'สำเร็จ', text: 'แก้ไขชื่อพนักงานเรียบร้อยแล้ว', timer: 1500 });
         this.loadEmployeeData(); 
       } catch(e) {
@@ -1656,25 +1676,39 @@ const app = {
       try {
         Swal.fire({ title: 'กำลังลบ...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
         
-        // ค้นหาทุกแถวที่เกี่ยวกับคนนี้ (เพราะมีภาพ 3 มุม)
-        const allEmp = await fetch(`${this.apiUrl}?action=getEmployeeDetails`).then(r => r.json());
+        const allEmpResponse = await fetch(`${this.apiUrl}?action=getEmployeeDetails`);
+        const allEmp = await allEmpResponse.json();
+        if (allEmp.error) throw new Error(allEmp.error);
+
         const recordsToDelete = Array.isArray(allEmp) ? allEmp.filter(e => e.name === name) : [];
-        
+        let hasError = false;
+        let errorMessage = 'เกิดข้อผิดพลาดในการลบข้อมูล';
+
         if(recordsToDelete.length > 0) {
-            const deletePromises = recordsToDelete.map(rec => 
-               fetch(this.apiUrl, {
+            for (const rec of recordsToDelete) {
+               const res = await fetch(this.apiUrl, {
                  method: 'POST',
                  body: JSON.stringify({ action: 'deleteUser', id: rec.id, name: name, pin: pin })
-               })
-            );
-            await Promise.all(deletePromises);
+               });
+               const data = await res.json();
+               if (!data.success) {
+                   hasError = true;
+                   errorMessage = data.error || errorMessage;
+               }
+            }
         } else {
-            // สำรองกรณีเกิด Error หรือ API รุ่นเก่า
-            await fetch(this.apiUrl, {
+            const res = await fetch(this.apiUrl, {
                method: 'POST',
                body: JSON.stringify({ action: 'deleteUser', name: name, pin: pin })
             });
+            const data = await res.json();
+            if (!data.success) {
+                hasError = true;
+                errorMessage = data.error || errorMessage;
+            }
         }
+
+        if (hasError) throw new Error(errorMessage);
 
         await Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', text: 'ลบข้อมูลพนักงานเรียบร้อยแล้ว', timer: 1500 });
         this.loadEmployeeData(); 
@@ -1841,13 +1875,16 @@ const app = {
     if(!this.apiUrl) return this.setHtmlAndIcons('report-status', '<span style="color:var(--danger)">ไม่มี API URL</span>');
 
     try {
-      const [employees, logs] = await Promise.all([
-        fetch(`${this.apiUrl}?action=getEmployeeDetails`).then(r => r.json()),
-        fetch(`${this.apiUrl}?action=getLogs&month=${month}&year=${year}`).then(r => r.json())
+      const [employeesResponse, logsResponse] = await Promise.all([
+        fetch(`${this.apiUrl}?action=getEmployeeDetails`),
+        fetch(`${this.apiUrl}?action=getLogs&month=${month}&year=${year}`)
       ]);
+      
+      const employees = await employeesResponse.json();
+      const logs = await logsResponse.json();
 
       if(employees.error) throw new Error(employees.error);
-      if(logs.error && Array.isArray(logs) === false && logs.error) throw new Error(logs.error);
+      if(logs.error && Array.isArray(logs) === false) throw new Error(logs.error);
       
       status.style.display = 'none';
       if(!Array.isArray(employees) || employees.length === 0) {
@@ -1892,7 +1929,7 @@ const app = {
 
         let actionHtml = '';
         if (role === 'superadmin') {
-          const safeName = emp.name.replace(/'/g, "\\'"); // กันปัญหาชื่อมีเครื่องหมายคำพูด
+          const safeName = emp.name.replace(/'/g, "\\'"); 
           actionHtml = `<td class="print-hide action-cell" style="vertical-align: middle;">
             <button class="btn btn-outline btn-sm" onclick="app.editUserRecord('${safeName}')"><i data-lucide="edit" style="width:14px; height:14px;"></i> แก้ไข</button>
             <button class="btn btn-outline btn-sm" style="color:var(--danger); border-color:#fecaca;" onclick="app.deleteUserRecord('${safeName}')"><i data-lucide="trash-2" style="width:14px; height:14px;"></i> ลบ</button>
@@ -1945,7 +1982,8 @@ const app = {
     if(!this.apiUrl) return this.setHtmlAndIcons('report-status', '<span style="color:var(--danger)">ไม่มี API URL</span>');
 
     try {
-      const logs = await fetch(`${this.apiUrl}?action=getLogs&month=${mEl.value}&year=${yEl.value}`).then(r => r.json());
+      const response = await fetch(`${this.apiUrl}?action=getLogs&month=${mEl.value}&year=${yEl.value}`);
+      const logs = await response.json();
       if(logs.error) throw new Error(logs.error);
       
       status.style.display = 'none';
@@ -2119,10 +2157,12 @@ const app = {
       const mm = String(month).padStart(2, '0');
       const dateKey = `${dd}/${mm}/${year}`;
 
-      const [logs, reports] = await Promise.all([
-        fetch(`${this.apiUrl}?action=getLogs&month=${month}&year=${year}`).then(r => r.json()),
-        fetch(`${this.apiUrl}?action=getDailyReports&month=${month}&year=${year}`).then(r => r.json())
+      const [logsResponse, reportsResponse] = await Promise.all([
+        fetch(`${this.apiUrl}?action=getLogs&month=${month}&year=${year}`),
+        fetch(`${this.apiUrl}?action=getDailyReports&month=${month}&year=${year}`)
       ]);
+      const logs = await logsResponse.json();
+      const reports = await reportsResponse.json();
       
       if(logs.error) throw new Error(logs.error);
       status.style.display = 'none';
@@ -2219,10 +2259,12 @@ const app = {
     if(!this.apiUrl) return this.setHtmlAndIcons('history-status', '<span style="color:var(--danger)">ไม่มี API URL</span>');
 
     try {
-      const [logs, reports] = await Promise.all([
-        fetch(`${this.apiUrl}?action=getLogs&month=${month}&year=${year}`).then(r => r.json()),
-        fetch(`${this.apiUrl}?action=getDailyReports&month=${month}&year=${year}`).then(r => r.json())
+      const [logsResponse, reportsResponse] = await Promise.all([
+        fetch(`${this.apiUrl}?action=getLogs&month=${month}&year=${year}`),
+        fetch(`${this.apiUrl}?action=getDailyReports&month=${month}&year=${year}`)
       ]);
+      const logs = await logsResponse.json();
+      const reports = await reportsResponse.json();
 
       if(logs && logs.error) throw new Error(logs.error);
       
@@ -2234,7 +2276,6 @@ const app = {
            if(!this.historyData[log.date].workers[log.name]) this.historyData[log.date].workers[log.name] = { in: '-', out: '-' };
            if(log.type === 'เข้างาน') this.historyData[log.date].workers[log.name].in = log.time;
            
-           // เก็บรายงานของพนักงานด้วย (ถ้ามี)
            if(log.type === 'เลิกงาน') {
              this.historyData[log.date].workers[log.name].out = log.time;
              this.historyData[log.date].workers[log.name].empReport = log.empReport || '';
@@ -2498,7 +2539,8 @@ const app = {
     if (this.regCounter === 0) {
       this.setHtmlAndIcons('btn-save-face', '<span class="loader"></span> ตรวจสอบสิทธิ์...');
       try {
-        const known = await fetch(this.apiUrl + '?action=getKnownFaces').then(r => r.json());
+        const response = await fetch(this.apiUrl + '?action=getKnownFaces');
+        const known = await response.json();
         if (known.some(u => String(u.label).trim() === name)) {
           msg.innerHTML = `<span style="color:var(--danger)">ชื่อ "${name}" ถูกลงทะเบียนไปแล้ว ไม่สามารถทำซ้ำได้</span>`;
           return this.resetRegBtn();
@@ -2531,10 +2573,12 @@ const app = {
     }
 
     try {
-      await fetch(this.apiUrl, {
+      const res = await fetch(this.apiUrl, {
         method: 'POST',
         body: JSON.stringify({ action: 'registerUser', name, faceDescriptor: Array.from(detection.descriptor), photo: photoBase64 })
       });
+      const data = await res.json();
+      if(!data.success) throw new Error(data.error || 'Failed to register');
       
       this.regCounter++;
       nameInput.disabled = true; 
@@ -2601,12 +2645,14 @@ const app = {
 
   async checkGPS() {
     try {
-      const [config, ipData] = await Promise.all([
-        fetch(this.apiUrl + '?action=getConfig').then(r => r.json()),
-        fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ ip: null }))
+      const [configRes, ipRes] = await Promise.all([
+        fetch(this.apiUrl + '?action=getConfig'),
+        fetch('https://api.ipify.org?format=json').catch(() => null)
       ]);
+      
+      const config = await configRes.json();
+      const ipData = ipRes ? await ipRes.json() : { ip: null };
 
-      // เก็บ Config ไว้ใน App State เพื่อใช้ตอนสแกนเสร็จ
       this.sysConfig = config;
 
       if (config.officeIp && ipData.ip === config.officeIp) {
@@ -2682,7 +2728,8 @@ const app = {
       const yyyy = bkkDate.getFullYear();
       const todayStr = `${dd}/${mm}/${yyyy}`; 
 
-      const logs = await fetch(`${this.apiUrl}?action=getLogs&month=${parseInt(mm)}&year=${yyyy}`).then(r => r.json());
+      const response = await fetch(`${this.apiUrl}?action=getLogs&month=${parseInt(mm)}&year=${yyyy}`);
+      const logs = await response.json();
       
       let hasIn = false; let hasOut = false; let timeIn = '-'; let timeOut = '-';
       if (Array.isArray(logs)) {
@@ -2725,7 +2772,6 @@ const app = {
     if (timeHtml !== '') { timeLog.innerHTML = timeHtml; timeLog.style.display = 'flex'; } 
     else { timeLog.style.display = 'none'; }
 
-    // เช็คสิทธิ์การเขียนรายงานของพนักงาน
     let canReport = false;
     if (this.sysConfig && this.sysConfig.empReportAccess) {
       if (this.sysConfig.empReportAccess === 'all') canReport = true;
@@ -2807,10 +2853,13 @@ const app = {
     if(btnOut) { btnOut.disabled = true; this.setHtmlAndIcons('btn-clock-out', '<i data-lucide="loader-2" class="loader-dark" style="animation: spin 1.5s linear infinite; width: 22px; height: 22px; border-color: transparent; border-top-color: white;"></i> กำลังบันทึก...'); }
 
     try {
-      await fetch(this.apiUrl, { 
+      const res = await fetch(this.apiUrl, { 
         method: 'POST', 
         body: JSON.stringify({ action: 'logAttendance', name: this.matchedName, type: typeStr, lat: this.currentLat, lng: this.currentLng, empReport: empReportText }) 
       });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Failed to log attendance');
+
       await Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', text: `บันทึก [${typeStr}] สำหรับ ${this.matchedName} เรียบร้อยแล้ว`, timer: 2500, showConfirmButton: false });
       document.getElementById('scan-modal').style.display = 'none';
       this.navigate('view-home');
