@@ -718,7 +718,6 @@
           <i data-lucide="link" style="width: 20px; height: 20px;"></i> การเชื่อมต่อ API
         </div>
         <div class="form-group">
-          <!-- 🛠️ แก้ไขคำอธิบายเพื่อให้สอดคล้องกับ PHP/MySQL -->
           <label>API URL (รองรับไฟล์ api.php หรือ Google Apps Script)</label>
           <input type="url" id="cfg-api" class="form-control" placeholder="https://yourdomain.com/api.php หรือ https://script.google...">
         </div>
@@ -859,7 +858,7 @@
           <option value="2025">2025</option>
           <option value="2024">2024</option>
         </select>
-        <button class="btn btn-primary" style="width: auto; padding: 12px 24px; border-radius: 14px;" onclick="app.loadReportData()">
+        <button class="btn btn-primary" style="width: auto; padding: 12px 24px; border-radius: 14px;" onclick="app.handleMonthlySearch()">
           <i data-lucide="search" style="width: 20px; height: 20px;"></i>
         </button>
       </div>
@@ -978,6 +977,8 @@
               <th style="width: 60px; text-align: center;">ลำดับ</th>
               <th>รูปถ่าย</th>
               <th>ชื่อพนักงาน</th>
+              <th style="text-align: center;">เข้างาน (วัน)</th>
+              <th style="text-align: center;">เลิกงาน (วัน)</th>
               <th>วัน-เวลาที่ลงทะเบียน</th>
             </tr>
           </thead>
@@ -1551,6 +1552,15 @@ const app = {
   // ---------------------------------------------------------
   // โค้ดส่วน Report 
   // ---------------------------------------------------------
+  handleMonthlySearch() {
+    const employeeContainer = document.getElementById('table-employee-container');
+    if (employeeContainer && employeeContainer.style.display === 'block') {
+      this.loadEmployeeData();
+    } else {
+      this.loadReportData();
+    }
+  },
+
   switchReportTab(tab) {
     const tabs = ['detail', 'summary', 'daily', 'employee'];
     tabs.forEach(t => {
@@ -1583,8 +1593,17 @@ const app = {
       }
       this.loadDailyReport();
     } else if (tab === 'employee') {
-      document.getElementById('filter-monthly').style.display = 'none';
+      document.getElementById('filter-monthly').style.display = 'flex';
       document.getElementById('filter-daily').style.display = 'none';
+      
+      const d = new Date();
+      const mEl = document.getElementById('report-month');
+      const yEl = document.getElementById('report-year');
+      if(!mEl.getAttribute('data-init')) {
+        mEl.value = d.getMonth() + 1;
+        yEl.value = d.getFullYear();
+        mEl.setAttribute('data-init', 'true');
+      }
       this.loadEmployeeData();
     } else {
       document.getElementById('filter-monthly').style.display = 'flex';
@@ -1597,6 +1616,9 @@ const app = {
   async loadEmployeeData() {
     const tbody = document.getElementById('employee-tbody');
     const status = document.getElementById('report-status');
+    const month = document.getElementById('report-month').value;
+    const year = document.getElementById('report-year').value;
+
     tbody.innerHTML = '';
     status.style.display = 'block';
     this.setHtmlAndIcons('report-status', '<i data-lucide="loader-2" class="loader-dark" style="border:none; animation: spin 1.5s linear infinite; width: 24px; height: 24px;"></i> กำลังดึงข้อมูลพนักงาน...');
@@ -1604,13 +1626,30 @@ const app = {
     if(!this.apiUrl) return this.setHtmlAndIcons('report-status', '<span style="color:var(--danger)">ไม่มี API URL</span>');
 
     try {
-      const employees = await fetch(`${this.apiUrl}?action=getEmployeeDetails`).then(r => r.json());
+      const [employees, logs] = await Promise.all([
+        fetch(`${this.apiUrl}?action=getEmployeeDetails`).then(r => r.json()),
+        fetch(`${this.apiUrl}?action=getLogs&month=${month}&year=${year}`).then(r => r.json())
+      ]);
+
       if(employees.error) throw new Error(employees.error);
+      if(logs.error && Array.isArray(logs) === false && logs.error) throw new Error(logs.error);
       
       status.style.display = 'none';
       if(!Array.isArray(employees) || employees.length === 0) {
-         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--text-muted); padding: 30px;">ไม่มีข้อมูลพนักงานในระบบ</td></tr>';
+         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted); padding: 30px;">ไม่มีข้อมูลพนักงานในระบบ</td></tr>';
          return;
+      }
+
+      // นับจำนวนวันที่เข้างานและเลิกงานของแต่ละคน (นับจากวันที่ที่ไม่ซ้ำกัน)
+      const attendanceCounts = {};
+      if (Array.isArray(logs)) {
+          logs.forEach(log => {
+              if (!attendanceCounts[log.name]) {
+                  attendanceCounts[log.name] = { inDates: new Set(), outDates: new Set() };
+              }
+              if (log.type === 'เข้างาน') attendanceCounts[log.name].inDates.add(log.date);
+              if (log.type === 'เลิกงาน') attendanceCounts[log.name].outDates.add(log.date);
+          });
       }
 
       const uniqueEmployees = {};
@@ -1620,6 +1659,10 @@ const app = {
       });
 
       Object.values(uniqueEmployees).forEach((emp, index) => {
+        const counts = attendanceCounts[emp.name] || { inDates: new Set(), outDates: new Set() };
+        const inCount = counts.inDates.size;
+        const outCount = counts.outDates.size;
+
         const tr = document.createElement('tr');
         let photoHtml = '<div style="width: 56px; height: 56px; background: #e2e8f0; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #94a3b8;"><i data-lucide="user" style="width: 24px; height: 24px;"></i></div>';
         if (emp.photo) {
@@ -1637,6 +1680,8 @@ const app = {
           <td style="text-align: center; color: var(--text-muted); font-weight: 600;">${index + 1}</td>
           <td style="padding: 12px 20px; width: 80px;">${photoHtml}</td>
           <td style="font-weight: 600; color: #1e293b; font-size: 1.1em; vertical-align: middle;">${emp.name}</td>
+          <td style="text-align: center; font-weight: 600; color: var(--success); vertical-align: middle;">${inCount} วัน</td>
+          <td style="text-align: center; font-weight: 600; color: var(--warning); vertical-align: middle;">${outCount} วัน</td>
           <td style="vertical-align: middle;">
             <div style="font-weight: 500; color: #334155;"><i data-lucide="calendar" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> ${regDate}</div>
             <div style="font-size: 0.9em; color: var(--text-muted); margin-top: 4px;"><i data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> ${regTime}</div>
@@ -2151,6 +2196,7 @@ const app = {
         `;
         tbody.appendChild(tr);
 
+        // แทรกแถวแสดงผลการปฏิบัติงานของพนักงาน ถ้ามีการบันทึกไว้
         if (times.empReport && times.empReport.trim() !== '') {
           const trReport = document.createElement('tr');
           trReport.innerHTML = `
