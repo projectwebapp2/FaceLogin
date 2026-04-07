@@ -654,9 +654,8 @@
           <label style="text-align: center;">รหัสผ่านสำหรับ Admin</label>
           <input type="password" id="admin-pin" class="form-control" placeholder="••••••••" style="text-align: center; font-size: 1.2em; letter-spacing: 2px;">
         </div>
-        <!-- เพิ่มคำแนะนำการใช้รหัสสำรองในกรณีฉุกเฉิน -->
         <div style="text-align: center; font-size: 0.85em; color: var(--text-muted); margin-bottom: 24px;">
-         <!--  * กรณีฉุกเฉินเชื่อมต่อ API ไม่ได้ ใช้รหัสสำรอง: <b>recovery123</b> -->
+          <!-- * กรณีฉุกเฉินเชื่อมต่อ API ไม่ได้ ใช้รหัสสำรอง: <b>recovery123</b> -->
         </div>
         <button id="btn-verify-admin" class="btn btn-primary" onclick="app.verifyAdmin()" style="padding: 16px; font-size: 1.1em;">
           <i data-lucide="log-in" style="width: 20px; height: 20px;"></i> เข้าสู่ระบบ
@@ -752,7 +751,6 @@
         </div>
       </div>
 
-      <!-- ส่วนตั้งค่าการรายงานผลการปฏิบัติงาน (พนักงาน) -->
       <div class="card-panel" style="grid-column: 1 / -1;">
         <div style="margin-bottom: 20px; font-weight: 700; font-size: 1.1em; color: var(--primary); display: flex; align-items: center; gap: 10px;">
           <i data-lucide="file-text" style="width: 20px; height: 20px;"></i> ตั้งค่าการรายงานผลการปฏิบัติงาน (พนักงาน)
@@ -771,7 +769,6 @@
         </div>
       </div>
 
-      <!-- ส่วนตั้งค่า Wi-Fi IP เพื่อ Bypass GPS และ Auto Updater -->
       <div class="card-panel" style="grid-column: 1 / -1;">
         <div style="margin-bottom: 20px; font-weight: 700; font-size: 1.1em; color: var(--warning); display: flex; align-items: center; gap: 10px;">
           <i data-lucide="wifi" style="width: 20px; height: 20px;"></i> ตั้งค่าเครือข่าย Wi-Fi ออฟฟิศ (แก้ปัญหาพิกัด GPS ในอาคาร)
@@ -849,7 +846,7 @@
 
     <div class="card-panel report-widget" style="padding: 24px;">
       
-      <!-- Filter เดือน/ปี (สำหรับดูรายเดือน) -->
+      <!-- Filter เดือน/ปี -->
       <div id="filter-monthly" style="display: flex; gap: 12px; margin-bottom: 24px; max-width: 700px; margin-left: auto; margin-right: auto;">
         <select id="report-month" class="form-control" style="flex: 1; padding: 14px;">
           <option value="1">มกราคม</option>
@@ -875,7 +872,7 @@
         </button>
       </div>
 
-      <!-- Filter รายวัน (สำหรับดูรายวัน) -->
+      <!-- Filter รายวัน -->
       <div id="filter-daily" style="display: none; gap: 12px; margin-bottom: 24px; max-width: 700px; margin-left: auto; margin-right: auto;">
         <input type="date" id="report-date" class="form-control" style="flex: 1; padding: 14px;">
         <button class="btn btn-primary" style="width: auto; padding: 12px 24px; border-radius: 14px;" onclick="app.loadDailyReport()">
@@ -1179,14 +1176,13 @@ window.fetch = function() {
   return originalFetch(resource, config);
 };
 
-// --- การตั้งค่าเริ่มต้น (API URL) ---
-// ⚠️ เปลี่ยนลิงก์ด้านล่างนี้เป็นลิงก์ Ngrok หรือ PHP API ของคุณก่อนอัปโหลดขึ้น GitHub
+// ⚠️ สำคัญมาก! คุณต้องเปลี่ยน URL บรรทัดล่างนี้ เป็นลิงก์ PHP API (Ngrok) ของคุณ 
+// เพื่อให้มือถือทุกเครื่องเปลี่ยนมาใช้ API ใหม่โดยอัตโนมัติ 100%
 const HARDCODED_API_URL = 'https://ddae-171-7-87-90.ngrok-free.app/facelogin/api.php';
 const MATCH_THRESHOLD = 0.48; 
 
 const app = {
   currentView: 'view-home',
-  // ใช้คีย์ใหม่ 'savedApiUrl' เพื่อให้ทุกคนโหลด API ใหม่ 100%
   apiUrl: localStorage.getItem('savedApiUrl') || HARDCODED_API_URL, 
   modelsLoaded: false,
   knownFaces: [],
@@ -1197,21 +1193,14 @@ const app = {
   matchedName: null,
   regCounter: 0,
   calendarData: {},
-  
-  // State สำหรับ Config
   sysConfig: null,
-
-  // State สำหรับ Auto Updater
   isAutoIpRunning: false,
   autoIpInterval: null,
-
-  // State สำหรับ History Pagination
   historyData: {}, 
   historySortedDates: [],
   historyCurrentPage: 1,
   historyItemsPerPage: 20,
 
-  // --- Utils ---
   formatThaiDate(dateStr) {
     if (!dateStr || dateStr === '-') return '-';
     if (typeof dateStr === 'string' && dateStr.includes('T')) {
@@ -1222,7 +1211,6 @@ const app = {
         return `${bkkDate.getDate()} ${thaiMonths[bkkDate.getMonth()]} ${bkkDate.getFullYear() + 543}`;
       } catch(e) {}
     }
-
     const parts = String(dateStr).split('/');
     if (parts.length !== 3) return dateStr;
     const day = parseInt(parts[0], 10);
@@ -1262,7 +1250,6 @@ const app = {
     }
   },
 
-  // --- 1. Core Functions ---
   init() {
     lucide.createIcons();
     if(!this.apiUrl) {
@@ -1341,9 +1328,6 @@ const app = {
     }
   },
 
-  // ---------------------------------------------------------
-  // โค้ดส่วน Admin & Config & Auto Update IP
-  // ---------------------------------------------------------
   showAdminLogin() { 
     const expiry = localStorage.getItem('adminExpiry');
     if (expiry && Date.now() < parseInt(expiry, 10)) {
@@ -1362,12 +1346,10 @@ const app = {
     
     if(!pin) return msgEl.innerText = 'กรุณาใส่รหัสผ่าน';
 
-    // 🛠️ รหัสผ่านสำรอง (Recovery Password) ในกรณีที่ API พัง / Ngrok เปลี่ยนลิงก์
-    // สามารถเปลี่ยนคำว่า 'recovery123' เป็นรหัสอื่นที่คุณต้องการได้เลยครับ
     if (pin === 'recovery123') {
       document.getElementById('admin-pin').value = '';
       localStorage.setItem('adminExpiry', Date.now() + 3600000); 
-      localStorage.setItem('adminRole', 'superadmin'); // ให้สิทธิ์เป็น superadmin เลยเพื่อแก้ไขได้ทุกอย่าง
+      localStorage.setItem('adminRole', 'superadmin'); 
       localStorage.setItem('adminTokenPin', pin); 
       this.navigate('view-admin-dashboard');
       Swal.fire({
@@ -1422,8 +1404,6 @@ const app = {
 
   async loadConfigData() {
     document.getElementById('cfg-api').value = this.apiUrl;
-    
-    // จัดการสิทธิ์การแสดงผลช่องเปลี่ยนรหัส Superadmin
     const role = localStorage.getItem('adminRole');
     const wrapSuperAdmin = document.getElementById('wrap-superadmin-pin');
     if (wrapSuperAdmin) {
@@ -1526,7 +1506,6 @@ const app = {
     if (empReportAccess === 'custom') {
       empReportAccess = 'custom:' + document.getElementById('cfg-emp-report-names').value.trim();
     }
-    
     const msg = document.getElementById('cfg-msg');
 
     if(!api) return msg.innerHTML = '<span style="color:var(--danger)">กรุณาใส่ API URL</span>';
@@ -1619,7 +1598,7 @@ const app = {
   // ---------------------------------------------------------
   // SUPERADMIN - CRUD Functions
   // ---------------------------------------------------------
-  async editUserRecord(id, oldName) {
+  async editUserRecord(oldName) {
     const pin = localStorage.getItem('adminTokenPin');
     const { value: newName } = await Swal.fire({
       title: 'แก้ไขชื่อพนักงาน',
@@ -1634,22 +1613,34 @@ const app = {
     if (newName && newName !== oldName) {
       try {
         Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-        const res = await fetch(this.apiUrl, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'editUser', id: id, newName: newName, oldName: oldName, pin: pin })
-        });
-        const data = await res.json();
-        if(data.success) {
-          await Swal.fire({ icon: 'success', title: 'สำเร็จ', text: data.message, timer: 1500 });
-          this.loadEmployeeData(); // โหลดใหม่
-        } else throw new Error(data.error);
+        
+        const allEmp = await fetch(`${this.apiUrl}?action=getEmployeeDetails`).then(r => r.json());
+        const recordsToEdit = Array.isArray(allEmp) ? allEmp.filter(e => e.name === oldName) : [];
+        
+        if(recordsToEdit.length > 0) {
+            const editPromises = recordsToEdit.map(rec => 
+               fetch(this.apiUrl, {
+                 method: 'POST',
+                 body: JSON.stringify({ action: 'editUser', id: rec.id, newName: newName, oldName: oldName, pin: pin })
+               })
+            );
+            await Promise.all(editPromises);
+        } else {
+            await fetch(this.apiUrl, {
+               method: 'POST',
+               body: JSON.stringify({ action: 'editUser', newName: newName, oldName: oldName, pin: pin })
+            });
+        }
+        
+        await Swal.fire({ icon: 'success', title: 'สำเร็จ', text: 'แก้ไขชื่อพนักงานเรียบร้อยแล้ว', timer: 1500 });
+        this.loadEmployeeData(); 
       } catch(e) {
         Swal.fire('ข้อผิดพลาด', e.message, 'error');
       }
     }
   },
 
-  async deleteUserRecord(id, name) {
+  async deleteUserRecord(name) {
     const pin = localStorage.getItem('adminTokenPin');
     const result = await Swal.fire({
       title: `ยืนยันการลบ ${name}?`,
@@ -1664,15 +1655,29 @@ const app = {
     if (result.isConfirmed) {
       try {
         Swal.fire({ title: 'กำลังลบ...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-        const res = await fetch(this.apiUrl, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'deleteUser', id: id, pin: pin })
-        });
-        const data = await res.json();
-        if(data.success) {
-          await Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', text: data.message, timer: 1500 });
-          this.loadEmployeeData(); // โหลดใหม่
-        } else throw new Error(data.error);
+        
+        // ค้นหาทุกแถวที่เกี่ยวกับคนนี้ (เพราะมีภาพ 3 มุม)
+        const allEmp = await fetch(`${this.apiUrl}?action=getEmployeeDetails`).then(r => r.json());
+        const recordsToDelete = Array.isArray(allEmp) ? allEmp.filter(e => e.name === name) : [];
+        
+        if(recordsToDelete.length > 0) {
+            const deletePromises = recordsToDelete.map(rec => 
+               fetch(this.apiUrl, {
+                 method: 'POST',
+                 body: JSON.stringify({ action: 'deleteUser', id: rec.id, name: name, pin: pin })
+               })
+            );
+            await Promise.all(deletePromises);
+        } else {
+            // สำรองกรณีเกิด Error หรือ API รุ่นเก่า
+            await fetch(this.apiUrl, {
+               method: 'POST',
+               body: JSON.stringify({ action: 'deleteUser', name: name, pin: pin })
+            });
+        }
+
+        await Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', text: 'ลบข้อมูลพนักงานเรียบร้อยแล้ว', timer: 1500 });
+        this.loadEmployeeData(); 
       } catch(e) {
         Swal.fire('ข้อผิดพลาด', e.message, 'error');
       }
@@ -1715,7 +1720,7 @@ const app = {
         const data = await res.json();
         if(data.success) {
           await Swal.fire({ icon: 'success', title: 'สำเร็จ', text: data.message, timer: 1500 });
-          this.loadReportData(); // โหลดตารางรายละเอียดใหม่
+          this.loadReportData(); 
         } else throw new Error(data.error);
       } catch(e) {
         Swal.fire('ข้อผิดพลาด', e.message, 'error');
@@ -1745,7 +1750,7 @@ const app = {
         const data = await res.json();
         if(data.success) {
           await Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', text: data.message, timer: 1500 });
-          this.loadReportData(); // โหลดใหม่
+          this.loadReportData(); 
         } else throw new Error(data.error);
       } catch(e) {
         Swal.fire('ข้อผิดพลาด', e.message, 'error');
@@ -1783,7 +1788,6 @@ const app = {
       }
     });
 
-    // แสดง/ซ่อน คอลัมน์จัดการสำหรับ Superadmin
     const role = localStorage.getItem('adminRole');
     document.querySelectorAll('.superadmin-only').forEach(el => {
       el.style.display = (role === 'superadmin') ? 'table-cell' : 'none';
@@ -1851,7 +1855,6 @@ const app = {
          return;
       }
 
-      // นับจำนวนวันที่เข้างานและเลิกงานของแต่ละคน
       const attendanceCounts = {};
       if (Array.isArray(logs)) {
           logs.forEach(log => {
@@ -1889,9 +1892,10 @@ const app = {
 
         let actionHtml = '';
         if (role === 'superadmin') {
+          const safeName = emp.name.replace(/'/g, "\\'"); // กันปัญหาชื่อมีเครื่องหมายคำพูด
           actionHtml = `<td class="print-hide action-cell" style="vertical-align: middle;">
-            <button class="btn btn-outline btn-sm" onclick="app.editUserRecord(${emp.id}, '${emp.name}')"><i data-lucide="edit" style="width:14px; height:14px;"></i> แก้ไข</button>
-            <button class="btn btn-outline btn-sm" style="color:var(--danger); border-color:#fecaca;" onclick="app.deleteUserRecord(${emp.id}, '${emp.name}')"><i data-lucide="trash-2" style="width:14px; height:14px;"></i> ลบ</button>
+            <button class="btn btn-outline btn-sm" onclick="app.editUserRecord('${safeName}')"><i data-lucide="edit" style="width:14px; height:14px;"></i> แก้ไข</button>
+            <button class="btn btn-outline btn-sm" style="color:var(--danger); border-color:#fecaca;" onclick="app.deleteUserRecord('${safeName}')"><i data-lucide="trash-2" style="width:14px; height:14px;"></i> ลบ</button>
           </td>`;
         }
 
@@ -1976,8 +1980,8 @@ const app = {
         let actionHtml = '';
         if (role === 'superadmin') {
           actionHtml = `<td class="print-hide action-cell">
-            <button class="btn btn-outline btn-sm" onclick="app.editLogRecord(${log.id}, '${log.time}', '${log.type}')"><i data-lucide="edit-2" style="width:14px; height:14px;"></i></button>
-            <button class="btn btn-outline btn-sm" style="color:var(--danger); border-color:#fecaca;" onclick="app.deleteLogRecord(${log.id})"><i data-lucide="trash-2" style="width:14px; height:14px;"></i></button>
+            <button class="btn btn-outline btn-sm" onclick="app.editLogRecord('${log.id || ''}', '${log.time}', '${log.type}')"><i data-lucide="edit-2" style="width:14px; height:14px;"></i></button>
+            <button class="btn btn-outline btn-sm" style="color:var(--danger); border-color:#fecaca;" onclick="app.deleteLogRecord('${log.id || ''}')"><i data-lucide="trash-2" style="width:14px; height:14px;"></i></button>
           </td>`;
         }
 
