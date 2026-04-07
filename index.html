@@ -192,6 +192,7 @@
     .btn-danger  { background: linear-gradient(135deg, var(--danger), var(--danger-hover)); box-shadow: 0 4px 12px rgba(239,68,68,0.25); }
     .btn-outline { background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-main); box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
     .btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
+    .btn-sm { padding: 6px 12px; font-size: 0.85em; border-radius: 8px; width: auto; }
 
     /* Main Menu Cards */
     .menu-grid { display: flex; flex-direction: column; gap: 16px; }
@@ -279,6 +280,7 @@
     tr:hover td { background: #f8fafc; }
     .type-in { color: var(--success); font-weight: 600; }
     .type-out { color: var(--warning); font-weight: 600; }
+    .action-cell { display: flex; gap: 8px; } /* สำหรับปุ่มจัดการของ Superadmin */
 
     /* Calendar Styles */
     .calendar-wrapper { background: #ffffff; border-radius: 16px; padding: 24px 16px; border: 1px solid var(--border-color); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
@@ -393,7 +395,7 @@
       .app-container { padding: 0 !important; max-width: 100% !important; width: 100% !important; margin: 0 !important; }
       
       /* ซ่อนส่วนที่ไม่ต้องการปริ้น */
-      .header, .top-nav, button, .admin-trigger, #history-list-view, .print-hide { 
+      .header, .top-nav, button, .admin-trigger, #history-list-view, .print-hide, .superadmin-only { 
         display: none !important; 
       }
       
@@ -649,7 +651,7 @@
           <i data-lucide="shield-check" style="width: 64px; height: 64px;"></i>
         </div>
         <div class="form-group" style="margin-bottom: 24px;">
-          <label style="text-align: center;">รหัสผ่าน Admin</label>
+          <label style="text-align: center;">รหัสผ่านสำหรับ Admin</label>
           <input type="password" id="admin-pin" class="form-control" placeholder="••••••••" style="text-align: center; font-size: 1.2em; letter-spacing: 2px;">
         </div>
         <button id="btn-verify-admin" class="btn btn-primary" onclick="app.verifyAdmin()" style="padding: 16px; font-size: 1.1em;">
@@ -668,7 +670,7 @@
       <button class="btn-back" onclick="app.adminLogout()">
         <i data-lucide="log-out" style="width: 18px; height: 18px;"></i> ออกจากระบบ
       </button>
-      <span class="nav-title">แผงควบคุม Admin</span>
+      <span class="nav-title">แผงควบคุม Admin <span id="dash-role-badge" style="font-size: 0.7em; background: #e2e8f0; color: #475569; padding: 4px 8px; border-radius: 8px; margin-left: 8px; vertical-align: middle;"></span></span>
     </div>
 
     <div class="menu-grid">
@@ -807,11 +809,17 @@
 
       <div class="card-panel" style="grid-column: 1 / -1;">
         <div style="margin-bottom: 20px; font-weight: 700; font-size: 1.1em; color: var(--danger); display: flex; align-items: center; gap: 10px;">
-          <i data-lucide="lock" style="width: 20px; height: 20px;"></i> ความปลอดภัย (รหัสผ่านแอดมิน)
+          <i data-lucide="lock" style="width: 20px; height: 20px;"></i> ความปลอดภัย (เปลี่ยนรหัสผ่าน)
         </div>
-        <div class="form-group">
-          <label>ตั้งรหัสผ่านใหม่ (ปล่อยว่างไว้หากไม่ต้องการเปลี่ยน)</label>
-          <input type="text" id="cfg-admin-pin" class="form-control" placeholder="กรอกรหัสผ่านใหม่ที่ต้องการ">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label>รหัสผ่าน Admin ทั่วไป</label>
+            <input type="text" id="cfg-admin-pin" class="form-control" placeholder="ปล่อยว่างหากไม่เปลี่ยน">
+          </div>
+          <div class="form-group">
+            <label style="color: var(--danger);">รหัสผ่าน Superadmin</label>
+            <input type="text" id="cfg-superadmin-pin" class="form-control" placeholder="ปล่อยว่างหากไม่เปลี่ยน">
+          </div>
         </div>
       </div>
     </div>
@@ -906,6 +914,7 @@
               <th>ชื่อพนักงาน</th>
               <th>สถานะ</th>
               <th>พิกัด</th>
+              <th class="superadmin-only print-hide" style="display: none; text-align: center;">จัดการ</th>
             </tr>
           </thead>
           <tbody id="report-tbody">
@@ -980,6 +989,7 @@
               <th style="text-align: center;">เข้างาน (วัน)</th>
               <th style="text-align: center;">เลิกงาน (วัน)</th>
               <th>วัน-เวลาที่ลงทะเบียน</th>
+              <th class="superadmin-only print-hide" style="display: none; text-align: center;">จัดการ</th>
             </tr>
           </thead>
           <tbody id="employee-tbody">
@@ -1172,7 +1182,6 @@ const MATCH_THRESHOLD = 0.48;
 
 const app = {
   currentView: 'view-home',
-  // ใช้คีย์ใหม่ 'savedApiUrl' เพื่อให้ทุกคนโหลด API ใหม่ 100%
   apiUrl: localStorage.getItem('savedApiUrl') || HARDCODED_API_URL, 
   modelsLoaded: false,
   knownFaces: [],
@@ -1278,6 +1287,23 @@ const app = {
     if(viewId === 'view-config') this.loadConfigData();
     if(viewId === 'view-report') this.switchReportTab('daily');
     if(viewId === 'view-work-history') this.initWorkHistory();
+    if(viewId === 'view-admin-dashboard') this.updateDashboardRoleUI();
+  },
+
+  updateDashboardRoleUI() {
+    const role = localStorage.getItem('adminRole');
+    const badge = document.getElementById('dash-role-badge');
+    if(badge) {
+      if(role === 'superadmin') {
+        badge.innerText = '⭐ Superadmin';
+        badge.style.background = '#fef08a';
+        badge.style.color = '#b45309';
+      } else {
+        badge.innerText = 'Admin';
+        badge.style.background = '#e2e8f0';
+        badge.style.color = '#475569';
+      }
+    }
   },
 
   async loadAIModels(badgeId) {
@@ -1319,6 +1345,8 @@ const app = {
       this.navigate('view-admin-dashboard'); 
     } else {
       localStorage.removeItem('adminExpiry'); 
+      localStorage.removeItem('adminRole');
+      localStorage.removeItem('adminTokenPin');
       this.navigate('view-admin-login'); 
     }
   },
@@ -1345,6 +1373,8 @@ const app = {
       if (data.success) {
         document.getElementById('admin-pin').value = '';
         localStorage.setItem('adminExpiry', Date.now() + 3600000); 
+        localStorage.setItem('adminRole', data.role || 'admin'); 
+        localStorage.setItem('adminTokenPin', pin); 
         this.navigate('view-admin-dashboard');
       } else {
         msgEl.innerText = data.error || 'รหัสผ่านไม่ถูกต้อง';
@@ -1359,6 +1389,8 @@ const app = {
   
   adminLogout() { 
     localStorage.removeItem('adminExpiry'); 
+    localStorage.removeItem('adminRole');
+    localStorage.removeItem('adminTokenPin');
     if(this.isAutoIpRunning) this.toggleAutoUpdateIP(true);
     this.navigate('view-home'); 
   },
@@ -1455,6 +1487,7 @@ const app = {
     const rad = document.getElementById('cfg-rad').value;
     const officeIp = document.getElementById('cfg-ip').value.trim();
     const adminPin = document.getElementById('cfg-admin-pin').value.trim();
+    const superadminPin = document.getElementById('cfg-superadmin-pin') ? document.getElementById('cfg-superadmin-pin').value.trim() : '';
     
     let empReportAccess = document.getElementById('cfg-emp-report-mode').value;
     if (empReportAccess === 'custom') {
@@ -1475,11 +1508,12 @@ const app = {
     try {
       const res = await fetch(api, {
         method: 'POST', 
-        body: JSON.stringify({ action: 'saveConfig', lat, lng, radius: rad, officeIp: officeIp, adminPin: adminPin, empReportAccess: empReportAccess })
+        body: JSON.stringify({ action: 'saveConfig', lat, lng, radius: rad, officeIp: officeIp, adminPin: adminPin, superadminPin: superadminPin, empReportAccess: empReportAccess })
       });
       await res.json();
       msg.innerHTML = '<span style="color:var(--success)">บันทึกตั้งค่าเรียบร้อย</span>';
       document.getElementById('cfg-admin-pin').value = ''; 
+      if(document.getElementById('cfg-superadmin-pin')) document.getElementById('cfg-superadmin-pin').value = '';
     } catch(e) {
       msg.innerHTML = `<span style="color:var(--danger)">Error: ${e.message}</span>`;
     }
@@ -1550,6 +1584,144 @@ const app = {
   },
 
   // ---------------------------------------------------------
+  // SUPERADMIN - CRUD Functions (เพิ่มใหม่)
+  // ---------------------------------------------------------
+  async editUserRecord(id, oldName) {
+    const pin = localStorage.getItem('adminTokenPin');
+    const { value: newName } = await Swal.fire({
+      title: 'แก้ไขชื่อพนักงาน',
+      input: 'text',
+      inputValue: oldName,
+      showCancelButton: true,
+      confirmButtonText: 'บันทึกการแก้ไข',
+      cancelButtonText: 'ยกเลิก',
+      inputValidator: (value) => { if (!value) return 'ชื่อพนักงานห้ามเว้นว่าง!' }
+    });
+
+    if (newName && newName !== oldName) {
+      try {
+        Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+        const res = await fetch(this.apiUrl, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'editUser', id: id, newName: newName, oldName: oldName, pin: pin })
+        });
+        const data = await res.json();
+        if(data.success) {
+          await Swal.fire({ icon: 'success', title: 'สำเร็จ', text: data.message, timer: 1500 });
+          this.loadEmployeeData(); // โหลดใหม่
+        } else throw new Error(data.error);
+      } catch(e) {
+        Swal.fire('ข้อผิดพลาด', e.message, 'error');
+      }
+    }
+  },
+
+  async deleteUserRecord(id, name) {
+    const pin = localStorage.getItem('adminTokenPin');
+    const result = await Swal.fire({
+      title: `ยืนยันการลบ ${name}?`,
+      text: "ข้อมูลใบหน้าของพนักงานคนนี้จะถูกลบถาวร (แต่ประวัติการลงเวลาจะยังอยู่)",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      confirmButtonText: 'ใช่, ลบทันที',
+      cancelButtonText: 'ยกเลิก'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        Swal.fire({ title: 'กำลังลบ...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+        const res = await fetch(this.apiUrl, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'deleteUser', id: id, pin: pin })
+        });
+        const data = await res.json();
+        if(data.success) {
+          await Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', text: data.message, timer: 1500 });
+          this.loadEmployeeData(); // โหลดใหม่
+        } else throw new Error(data.error);
+      } catch(e) {
+        Swal.fire('ข้อผิดพลาด', e.message, 'error');
+      }
+    }
+  },
+
+  async editLogRecord(id, oldTime, oldType) {
+    const pin = localStorage.getItem('adminTokenPin');
+    // แปลง 08:00:00 น. เป็น 08:00:00 สำหรับ input type time
+    let defaultTime = oldTime.replace(' น.', '').trim();
+    if(defaultTime === '-' || defaultTime === '') defaultTime = '08:00:00';
+    if(defaultTime.length === 5) defaultTime += ':00'; // ถ้ามาแบบ HH:mm ให้เติม :ss
+
+    const { value: formValues } = await Swal.fire({
+      title: 'แก้ไขข้อมูลลงเวลา',
+      html:
+        `<select id="swal-type" class="swal2-input" style="display:flex; width:80%; margin:10px auto;">
+          <option value="เข้างาน" ${oldType === 'เข้างาน' ? 'selected' : ''}>เข้างาน</option>
+          <option value="เลิกงาน" ${oldType === 'เลิกงาน' ? 'selected' : ''}>เลิกงาน</option>
+         </select>
+         <input id="swal-time" type="time" step="1" class="swal2-input" value="${defaultTime}" style="display:flex; width:80%; margin:10px auto;">`,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'บันทึกการแก้ไข',
+      cancelButtonText: 'ยกเลิก',
+      preConfirm: () => {
+        return [
+          document.getElementById('swal-type').value,
+          document.getElementById('swal-time').value
+        ]
+      }
+    });
+
+    if (formValues) {
+      try {
+        Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+        const res = await fetch(this.apiUrl, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'editLog', id: id, newType: formValues[0], newTime: formValues[1], pin: pin })
+        });
+        const data = await res.json();
+        if(data.success) {
+          await Swal.fire({ icon: 'success', title: 'สำเร็จ', text: data.message, timer: 1500 });
+          this.loadReportData(); // โหลดตารางรายละเอียดใหม่
+        } else throw new Error(data.error);
+      } catch(e) {
+        Swal.fire('ข้อผิดพลาด', e.message, 'error');
+      }
+    }
+  },
+
+  async deleteLogRecord(id) {
+    const pin = localStorage.getItem('adminTokenPin');
+    const result = await Swal.fire({
+      title: `ยืนยันการลบข้อมูลลงเวลานี้?`,
+      text: "ข้อมูลบรรทัดนี้จะถูกลบถาวร ไม่สามารถกู้คืนได้",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      confirmButtonText: 'ใช่, ลบทันที',
+      cancelButtonText: 'ยกเลิก'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        Swal.fire({ title: 'กำลังลบ...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+        const res = await fetch(this.apiUrl, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'deleteLog', id: id, pin: pin })
+        });
+        const data = await res.json();
+        if(data.success) {
+          await Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', text: data.message, timer: 1500 });
+          this.loadReportData(); // โหลดใหม่
+        } else throw new Error(data.error);
+      } catch(e) {
+        Swal.fire('ข้อผิดพลาด', e.message, 'error');
+      }
+    }
+  },
+
+  // ---------------------------------------------------------
   // โค้ดส่วน Report 
   // ---------------------------------------------------------
   handleMonthlySearch() {
@@ -1577,6 +1749,12 @@ const app = {
         btn.style.color = 'var(--text-main)';
         container.style.display = 'none';
       }
+    });
+
+    // แสดง/ซ่อน คอลัมน์จัดการสำหรับ Superadmin
+    const role = localStorage.getItem('adminRole');
+    document.querySelectorAll('.superadmin-only').forEach(el => {
+      el.style.display = (role === 'superadmin') ? 'table-cell' : 'none';
     });
 
     if (tab === 'daily') {
@@ -1618,6 +1796,7 @@ const app = {
     const status = document.getElementById('report-status');
     const month = document.getElementById('report-month').value;
     const year = document.getElementById('report-year').value;
+    const role = localStorage.getItem('adminRole');
 
     tbody.innerHTML = '';
     status.style.display = 'block';
@@ -1636,11 +1815,11 @@ const app = {
       
       status.style.display = 'none';
       if(!Array.isArray(employees) || employees.length === 0) {
-         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted); padding: 30px;">ไม่มีข้อมูลพนักงานในระบบ</td></tr>';
+         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 30px;">ไม่มีข้อมูลพนักงานในระบบ</td></tr>';
          return;
       }
 
-      // นับจำนวนวันที่เข้างานและเลิกงานของแต่ละคน (นับจากวันที่ที่ไม่ซ้ำกัน)
+      // นับจำนวนวันที่เข้างานและเลิกงานของแต่ละคน
       const attendanceCounts = {};
       if (Array.isArray(logs)) {
           logs.forEach(log => {
@@ -1676,6 +1855,14 @@ const app = {
           else { regDate = this.formatThaiDate(emp.registeredAt); }
         }
 
+        let actionHtml = '';
+        if (role === 'superadmin') {
+          actionHtml = `<td class="print-hide action-cell" style="vertical-align: middle;">
+            <button class="btn btn-outline btn-sm" onclick="app.editUserRecord(${emp.id}, '${emp.name}')"><i data-lucide="edit" style="width:14px; height:14px;"></i> แก้ไข</button>
+            <button class="btn btn-outline btn-sm" style="color:var(--danger); border-color:#fecaca;" onclick="app.deleteUserRecord(${emp.id}, '${emp.name}')"><i data-lucide="trash-2" style="width:14px; height:14px;"></i> ลบ</button>
+          </td>`;
+        }
+
         tr.innerHTML = `
           <td style="text-align: center; color: var(--text-muted); font-weight: 600;">${index + 1}</td>
           <td style="padding: 12px 20px; width: 80px;">${photoHtml}</td>
@@ -1686,6 +1873,7 @@ const app = {
             <div style="font-weight: 500; color: #334155;"><i data-lucide="calendar" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> ${regDate}</div>
             <div style="font-size: 0.9em; color: var(--text-muted); margin-top: 4px;"><i data-lucide="clock" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> ${regTime}</div>
           </td>
+          ${actionHtml}
         `;
         tbody.appendChild(tr);
       });
@@ -1702,6 +1890,7 @@ const app = {
     const calendarArea = document.getElementById('calendar-render-area');
     const status = document.getElementById('report-status');
     const detailDiv = document.getElementById('cal-day-detail');
+    const role = localStorage.getItem('adminRole');
     if(detailDiv) detailDiv.style.display = 'none'; 
     
     const d = new Date();
@@ -1725,7 +1914,7 @@ const app = {
       
       status.style.display = 'none';
       if(!Array.isArray(logs) || logs.length === 0) {
-         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-muted); padding: 30px;">ไม่มีข้อมูลในเดือนนี้</td></tr>';
+         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 30px;">ไม่มีข้อมูลในเดือนนี้</td></tr>';
          userSelect.innerHTML = '<option>ไม่มีข้อมูล</option>';
          calendarArea.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding: 40px;">ไม่มีบันทึกการทำงานในเดือนนี้</div>';
          return;
@@ -1751,6 +1940,15 @@ const app = {
         const tr = document.createElement('tr');
         const typeClass = log.type === 'เข้างาน' ? 'type-in' : (log.type === 'เลิกงาน' ? 'type-out' : '');
         const mapLink = log.map && log.map !== '-' ? `<a href="${log.map}" target="_blank" style="color:var(--primary); text-decoration: none;"><i data-lucide="map-pin" style="width: 16px; height: 16px;"></i> แผนที่</a>` : '-';
+        
+        let actionHtml = '';
+        if (role === 'superadmin') {
+          actionHtml = `<td class="print-hide action-cell">
+            <button class="btn btn-outline btn-sm" onclick="app.editLogRecord(${log.id}, '${log.time}', '${log.type}')"><i data-lucide="edit-2" style="width:14px; height:14px;"></i></button>
+            <button class="btn btn-outline btn-sm" style="color:var(--danger); border-color:#fecaca;" onclick="app.deleteLogRecord(${log.id})"><i data-lucide="trash-2" style="width:14px; height:14px;"></i></button>
+          </td>`;
+        }
+
         tr.innerHTML = `
           <td style="text-align: center; color: var(--text-muted); font-weight: 600;">${index + 1}</td>
           <td style="font-weight: 500;">${this.formatThaiDate(log.date)}</td>
@@ -1758,6 +1956,7 @@ const app = {
           <td style="font-weight: 600; color: #1e293b;">${log.name}</td>
           <td class="${typeClass}">${log.type}</td>
           <td>${mapLink}</td>
+          ${actionHtml}
         `;
         tbody.appendChild(tr);
       });
@@ -1999,7 +2198,6 @@ const app = {
            if(!this.historyData[log.date].workers[log.name]) this.historyData[log.date].workers[log.name] = { in: '-', out: '-' };
            if(log.type === 'เข้างาน') this.historyData[log.date].workers[log.name].in = log.time;
            
-           // เก็บรายงานของพนักงานด้วย (ถ้ามี)
            if(log.type === 'เลิกงาน') {
              this.historyData[log.date].workers[log.name].out = log.time;
              this.historyData[log.date].workers[log.name].empReport = log.empReport || '';
@@ -2196,7 +2394,6 @@ const app = {
         `;
         tbody.appendChild(tr);
 
-        // แทรกแถวแสดงผลการปฏิบัติงานของพนักงาน ถ้ามีการบันทึกไว้
         if (times.empReport && times.empReport.trim() !== '') {
           const trReport = document.createElement('tr');
           trReport.innerHTML = `
@@ -2490,7 +2687,6 @@ const app = {
     if (timeHtml !== '') { timeLog.innerHTML = timeHtml; timeLog.style.display = 'flex'; } 
     else { timeLog.style.display = 'none'; }
 
-    // เช็คสิทธิ์การเขียนรายงานของพนักงาน
     let canReport = false;
     if (this.sysConfig && this.sysConfig.empReportAccess) {
       if (this.sysConfig.empReportAccess === 'all') canReport = true;
