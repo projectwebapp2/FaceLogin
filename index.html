@@ -627,7 +627,7 @@
           <input type="password" id="admin-pin" class="form-control" placeholder="••••••••" style="text-align: center; font-size: 1.2em; letter-spacing: 2px;">
         </div>
         <div style="text-align: center; font-size: 0.85em; color: var(--text-muted); margin-bottom: 24px;">
-          <!-- * กรณีฉุกเฉินเชื่อมต่อ API ไม่ได้ ใช้รหัสสำรอง: <b>recovery123</b> -->
+         <!--  * กรณีฉุกเฉินเชื่อมต่อ API ไม่ได้ ใช้รหัสสำรอง: <b>recovery123</b> -->
         </div>
         <button id="btn-verify-admin" class="btn btn-primary" onclick="app.verifyAdmin()" style="padding: 16px; font-size: 1.1em;">
           <i data-lucide="log-in" style="width: 20px; height: 20px;"></i> เข้าสู่ระบบ
@@ -696,11 +696,12 @@
         </div>
         <div class="form-group">
           <label>API URL (รองรับไฟล์ api.php หรือ Google Apps Script)</label>
+          <!-- ⚠️ สำคัญ: ใส่ URL API ของคุณตรงนี้ ก่อนอัปโหลดไฟล์ HTML เพื่อแก้ปัญหามือถือพนักงานไม่อัปเดต URL -->
           <input type="url" id="cfg-api" class="form-control" placeholder="https://yourdomain.com/api.php หรือ https://script.google...">
         </div>
       </div>
 
-      <div class="card-panel" style="grid-column: 1 / -1;">
+      <div class="card-panel">
         <div style="margin-bottom: 20px; font-weight: 700; font-size: 1.1em; color: var(--success); display: flex; align-items: center; gap: 10px;">
           <i data-lucide="map" style="width: 20px; height: 20px;"></i> ตั้งค่าจุดเช็คอิน (GPS)
         </div>
@@ -790,7 +791,7 @@
             <input type="text" id="cfg-admin-pin" class="form-control" placeholder="ปล่อยว่างหากไม่เปลี่ยน">
           </div>
           <div class="form-group" id="wrap-superadmin-pin">
-            <label style="color: var(--danger);">รหัสผ่าน SuperAdmin</label>
+            <label style="color: var(--danger);">รหัสผ่าน Superadmin</label>
             <input type="text" id="cfg-superadmin-pin" class="form-control" placeholder="ปล่อยว่างหากไม่เปลี่ยน">
           </div>
         </div>
@@ -1133,7 +1134,6 @@ const urlParams = new URLSearchParams(window.location.search);
 const queryApi = urlParams.get('api');
 if (queryApi) {
   localStorage.setItem('savedApiUrl', queryApi);
-  // ลบพารามิเตอร์ออกจาก URL เพื่อความสวยงาม
   window.history.replaceState({}, document.title, window.location.pathname);
 }
 
@@ -1443,7 +1443,7 @@ const app = {
         msgEl.innerText = data.error || 'รหัสผ่านไม่ถูกต้อง';
       }
     } catch(e) {
-      msgEl.innerHTML = `ไม่สามารถตรวจสอบได้: ${e.message}<br><span style="font-size:0.85em; color:var(--text-muted);">หาก URL ของ API เปลี่ยนแปลง กรุณาใช้รหัสผ่านสำรอง  เพื่อเข้าสู่ระบบและอัปเดต URL ใหม่</span>`;
+      msgEl.innerHTML = `ไม่สามารถตรวจสอบได้: ${e.message}<br><span style="font-size:0.85em; color:var(--text-muted);">หาก URL ของ API เปลี่ยนแปลง กรุณาใช้รหัสผ่านสำรอง เพื่อเข้าสู่ระบบและอัปเดต URL ใหม่</span>`;
     }
     
     btn.disabled = false;
@@ -1656,7 +1656,7 @@ const app = {
   },
 
   // ---------------------------------------------------------
-  // SUPERADMIN - CRUD Functions 
+  // SUPERADMIN - CRUD Functions
   // ---------------------------------------------------------
   async editUserRecord(oldName) {
     const pin = localStorage.getItem('adminTokenPin');
@@ -1778,7 +1778,7 @@ const app = {
     const pin = localStorage.getItem('adminTokenPin');
     let defaultTime = oldTime.replace(' น.', '').trim();
     if(defaultTime === '-' || defaultTime === '') defaultTime = '08:00:00';
-    if(defaultTime.length === 5) defaultTime += ':00'; // ถ้ามาแบบ HH:mm ให้เติม :ss
+    if(defaultTime.length === 5) defaultTime += ':00'; 
 
     const { value: formValues } = await Swal.fire({
       title: 'แก้ไขข้อมูลลงเวลา',
@@ -2725,7 +2725,17 @@ const app = {
       }
       
       const dist = this.haversine(this.currentLat, this.currentLng, config.lat, config.lng);
-      if (dist <= config.radius) {
+      
+      // ระบบชดเชยความคลาดเคลื่อน (GPS Bounce Compensation)
+      // ถ้าระยะเกินนิดหน่อย แต่ความแม่นยำ (accuracy) แย่ ให้ถือว่ายังอยู่ในระยะ 
+      // (ชดเชยสูงสุด 30% ของ accuracy แต่ไม่เกิน 20 เมตร)
+      let allowance = 0;
+      if (accuracy > 10 && accuracy < 60) {
+          allowance = Math.min(accuracy * 0.3, 20);
+      }
+      const effectiveDist = Math.max(0, dist - allowance);
+
+      if (effectiveDist <= config.radius) {
         let accWarn = accuracy > 15 ? ` <span style="color:#f59e0b;font-size:0.85em;">(สัญญาณอ่อน ±${accuracy}ม.)</span>` : ` (±${accuracy}ม.)`;
         this.setHtmlAndIcons('scan-gps-status', `<i data-lucide="map-pin" style="width: 16px; height: 16px;"></i> GPS: อยู่ในพื้นที่ (${Math.round(dist)} เมตร)${accWarn}`);
       } else {
