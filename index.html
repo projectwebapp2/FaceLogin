@@ -623,11 +623,11 @@
           <i data-lucide="shield-check" style="width: 64px; height: 64px;"></i>
         </div>
         <div class="form-group" style="margin-bottom: 12px;">
-          <label style="text-align: center;">รหัสผ่านสำหรับ Admin</label>
+          <label style="text-align: center;">รหัสผ่าน Admin / Superadmin</label>
           <input type="password" id="admin-pin" class="form-control" placeholder="••••••••" style="text-align: center; font-size: 1.2em; letter-spacing: 2px;">
         </div>
         <div style="text-align: center; font-size: 0.85em; color: var(--text-muted); margin-bottom: 24px;">
-          <!-- * กรณีฉุกเฉินเชื่อมต่อ API ไม่ได้ ใช้รหัสสำรอง: <b>recovery123</b> -->
+          * กรณีฉุกเฉินเชื่อมต่อ API ไม่ได้ ใช้รหัสสำรอง: <b>recovery123</b>
         </div>
         <button id="btn-verify-admin" class="btn btn-primary" onclick="app.verifyAdmin()" style="padding: 16px; font-size: 1.1em;">
           <i data-lucide="log-in" style="width: 20px; height: 20px;"></i> เข้าสู่ระบบ
@@ -700,7 +700,7 @@
         </div>
       </div>
 
-      <div class="card-panel" style="grid-column: 1 / -1;">
+      <div class="card-panel">
         <div style="margin-bottom: 20px; font-weight: 700; font-size: 1.1em; color: var(--success); display: flex; align-items: center; gap: 10px;">
           <i data-lucide="map" style="width: 20px; height: 20px;"></i> ตั้งค่าจุดเช็คอิน (GPS)
         </div>
@@ -1157,13 +1157,13 @@ window.fetch = function() {
   return originalFetch(resource, config);
 };
 
-// ⚠️ สำคัญมาก! เปลี่ยน URL ด้านล่างให้เป็น URL ปัจจุบันของ Ngrok ก่อนนำไฟล์ขึ้น Github
-const HARDCODED_API_URL = 'https://ddae-171-7-87-90.ngrok-free.app/facelogin/api.php';
+// 🌟 ลิงก์ Google Apps Script สำหรับใช้เป็น "ป้ายบอกทาง" ดึง URL ปัจจุบันอัตโนมัติ
+const GAS_ROUTER_URL = 'https://script.google.com/macros/s/AKfycbxdMDJFsTYQSvA2tC6qfJody0TkJqO76d5rSFO78GQDW5nxYqMsMW4w27oIaXQhcEEl/exec';
 const MATCH_THRESHOLD = 0.48; 
 
 const app = {
   currentView: 'view-home',
-  apiUrl: localStorage.getItem('savedApiUrl') || HARDCODED_API_URL, 
+  apiUrl: localStorage.getItem('savedApiUrl') || '', 
   modelsLoaded: false,
   knownFaces: [],
   currentStream: null,
@@ -1231,12 +1231,30 @@ const app = {
     }
   },
 
-  init() {
+  async init() {
     lucide.createIcons();
-    if(!this.apiUrl) {
-      document.getElementById('home-alert').style.display = 'flex';
-    } else {
-      document.getElementById('home-alert').style.display = 'none';
+    
+    // 🌟 ดึง API URL ล่าสุดจากฐานข้อมูลกลาง (Google Script) โดยอัตโนมัติ
+    document.getElementById('home-alert').style.display = 'flex';
+    this.setHtmlAndIcons('home-alert', '<i data-lucide="loader-2" class="loader-dark" style="animation: spin 1.5s linear infinite;"></i> กำลังเชื่อมต่อเซิร์ฟเวอร์...');
+    
+    try {
+      const res = await fetch(GAS_ROUTER_URL + '?action=getNgrokUrl');
+      const data = await res.json();
+      if (data && data.success && data.url) {
+        this.apiUrl = data.url;
+        localStorage.setItem('savedApiUrl', data.url);
+        document.getElementById('home-alert').style.display = 'none';
+      } else {
+        throw new Error('ไม่พบ URL ในระบบ');
+      }
+    } catch(e) {
+      if (!this.apiUrl) {
+        this.setHtmlAndIcons('home-alert', '<i data-lucide="alert-triangle"></i> ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
+      } else {
+        // ใช้ของเดิมในแคชไปก่อน
+        document.getElementById('home-alert').style.display = 'none';
+      }
     }
     
     // เริ่มระบบดึง URL ของ Ngrok อัตโนมัติ (เฉพาะบน Localhost ป้องกัน Error)
