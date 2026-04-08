@@ -394,23 +394,28 @@
       }
       .app-container { padding: 0 !important; max-width: 100% !important; width: 100% !important; margin: 0 !important; }
       
+      /* ซ่อนส่วนที่ไม่ต้องการปริ้น */
       .header, .top-nav, button, .admin-trigger, #history-list-view, .print-hide, .superadmin-only { 
         display: none !important; 
       }
       
+      /* จัดรูปแบบ Card ให้เหมาะกับกระดาษ */
       .card-panel { 
         box-shadow: none !important; border: none !important; padding: 0 !important; 
         margin: 0 !important; background: transparent !important; width: 100% !important; max-width: 100% !important;
       }
       
+      /* ปรับสีข้อความและไอคอนให้เป็นดำหรือเข้ม */
       .title, .subtitle, * { color: #000 !important; }
       svg { stroke: #000 !important; }
       
+      /* จัดรูปแบบกล่องข้อความรายละเอียด */
       #history-detail-text, #cal-day-detail > div {
         border: 1px solid #ccc !important; background: #f9f9f9 !important;
         padding: 16px !important; color: #000 !important; width: 100% !important; word-wrap: break-word !important;
       }
       
+      /* จัดรูปแบบตาราง */
       .table-container { 
         border: none !important; box-shadow: none !important; overflow: visible !important; 
         width: 100% !important; margin: 0 !important; padding: 0 !important;
@@ -425,6 +430,7 @@
       }
       th { background-color: #f0f0f0 !important; }
       
+      /* บังคับแสดงผลเฉพาะหน้า Detail */
       #view-work-history { display: block !important; width: 100% !important; }
       #history-detail-view { display: block !important; width: 100% !important; }
     }
@@ -617,11 +623,11 @@
           <i data-lucide="shield-check" style="width: 64px; height: 64px;"></i>
         </div>
         <div class="form-group" style="margin-bottom: 12px;">
-          <label style="text-align: center;">รหัสผ่านสำหรับ Admin</label>
+          <label style="text-align: center;">รหัสผ่าน Admin / Superadmin</label>
           <input type="password" id="admin-pin" class="form-control" placeholder="••••••••" style="text-align: center; font-size: 1.2em; letter-spacing: 2px;">
         </div>
         <div style="text-align: center; font-size: 0.85em; color: var(--text-muted); margin-bottom: 24px;">
-         <!-- * กรณีฉุกเฉินเชื่อมต่อ API ไม่ได้ ใช้รหัสสำรอง: <b>recovery123</b> -->
+          * กรณีฉุกเฉินเชื่อมต่อ API ไม่ได้ ใช้รหัสสำรอง: <b>recovery123</b>
         </div>
         <button id="btn-verify-admin" class="btn btn-primary" onclick="app.verifyAdmin()" style="padding: 16px; font-size: 1.1em;">
           <i data-lucide="log-in" style="width: 20px; height: 20px;"></i> เข้าสู่ระบบ
@@ -691,14 +697,10 @@
         <div class="form-group">
           <label>API URL (รองรับไฟล์ api.php หรือ Google Apps Script)</label>
           <input type="url" id="cfg-api" class="form-control" placeholder="https://yourdomain.com/api.php หรือ https://script.google...">
-          <div style="font-size: 0.85em; color: var(--success); margin-top: 8px; display: flex; align-items: center; gap: 6px;">
-            <i data-lucide="zap" style="width: 14px; height: 14px;"></i> 
-            ระบบจะตรวจจับและอัปเดต URL ของ Ngrok ให้อัตโนมัติ (หากเปิดโปรแกรม Ngrok ทิ้งไว้บนเครื่องเดียวกัน)
-          </div>
         </div>
       </div>
 
-      <div class="card-panel" style="grid-column: 1 / -1;">
+      <div class="card-panel">
         <div style="margin-bottom: 20px; font-weight: 700; font-size: 1.1em; color: var(--success); display: flex; align-items: center; gap: 10px;">
           <i data-lucide="map" style="width: 20px; height: 20px;"></i> ตั้งค่าจุดเช็คอิน (GPS)
         </div>
@@ -757,6 +759,25 @@
             * ปล่อยช่องว่างไว้ หากไม่ต้องการใช้งานระบบตรวจสอบ Wi-Fi
           </div>
         </div>
+
+        <!-- ระบบอัปเดต IP อัตโนมัติ -->
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--border-color);">
+          <div style="font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i> ระบบอัปเดต IP อัตโนมัติ (สำหรับเน็ตที่เปลี่ยน IP บ่อย)
+          </div>
+          <p style="font-size: 0.85em; color: var(--text-muted); margin-bottom: 12px;">
+            * ให้เปิดหน้านี้ทิ้งไว้บนคอมพิวเตอร์ที่ต่อเน็ตออฟฟิศ ระบบจะทำการเช็คและอัปเดต IP ให้ใหม่โดยอัตโนมัติทุกๆ 1 ชั่วโมง
+          </p>
+          <div id="auto-ip-status" style="margin-bottom: 16px; font-size: 0.9em; display: none; background: rgba(16,185,129,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(16,185,129,0.3);">
+             <div style="color: var(--success); font-weight: 600; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+               <i data-lucide="activity" class="pulse-anim" style="width: 16px; height: 16px;"></i> โหมดอัปเดตอัตโนมัติกำลังทำงาน
+             </div>
+             <div style="color: var(--text-main); margin-left: 22px;">สถานะ: <span id="auto-ip-time">-</span></div>
+          </div>
+          <button id="btn-auto-ip" class="btn btn-outline" style="width: auto; padding: 12px 20px; font-size: 0.95em;" onclick="app.toggleAutoUpdateIP()">
+            <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i> เปิดโหมดอัปเดต IP ค้างไว้
+          </button>
+        </div>
       </div>
 
       <div class="card-panel" style="grid-column: 1 / -1;">
@@ -814,9 +835,9 @@
           <option value="12">ธันวาคม</option>
         </select>
         <select id="report-year" class="form-control" style="flex: 1; padding: 14px;">
-          <option value="2027">2027</option>
           <option value="2026">2026</option>
           <option value="2025">2025</option>
+          <option value="2024">2024</option>
         </select>
         <button class="btn btn-primary" style="width: auto; padding: 12px 24px; border-radius: 14px;" onclick="app.handleMonthlySearch()">
           <i data-lucide="search" style="width: 20px; height: 20px;"></i>
@@ -1107,6 +1128,15 @@
      APPLICATION LOGIC (JAVASCRIPT)
      ========================================================= -->
 <script>
+// --- ตรวจจับ Magic Link (อัปเดต API อัตโนมัติจาก URL) ---
+const urlParams = new URLSearchParams(window.location.search);
+const queryApi = urlParams.get('api');
+if (queryApi) {
+  localStorage.setItem('savedApiUrl', queryApi);
+  // ลบพารามิเตอร์ออกจาก URL เพื่อความสวยงาม
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
+
 // --- ล้างแคช API เก่าอัตโนมัติ เพื่อบังคับให้อุปกรณ์ทุกเครื่องใช้ API ใหม่ ---
 if (localStorage.getItem('gasApiUrl')) {
   localStorage.removeItem('gasApiUrl');
@@ -1143,16 +1173,10 @@ const app = {
   matchedName: null,
   regCounter: 0,
   calendarData: {},
-  
-  // State สำหรับ Config
   sysConfig: null,
-
-  // State สำหรับ Auto Updater
   isAutoIpRunning: false,
   autoIpInterval: null,
   ngrokTrackerInterval: null,
-
-  // State สำหรับ History Pagination
   historyData: {}, 
   historySortedDates: [],
   historyCurrentPage: 1,
@@ -1215,19 +1239,20 @@ const app = {
       document.getElementById('home-alert').style.display = 'none';
     }
     
-    // เริ่มระบบดึง URL ของ Ngrok อัตโนมัติ (ทำงานเบื้องหลัง)
-    this.startNgrokAutoTracker();
+    // เริ่มระบบดึง URL ของ Ngrok อัตโนมัติ (เฉพาะบน Localhost ป้องกัน Error)
+    if(window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      this.startNgrokAutoTracker();
+    }
   },
 
   // ---------------------------------------------------------
-  // AUTO NGROK DETECTOR (ฟีเจอร์สอดแนมการเปลี่ยนแปลงของ Ngrok)
+  // AUTO NGROK DETECTOR
   // ---------------------------------------------------------
   startNgrokAutoTracker() {
     if (this.ngrokTrackerInterval) clearInterval(this.ngrokTrackerInterval);
     
     this.ngrokTrackerInterval = setInterval(async () => {
       try {
-        // แอบยิงไปที่ตัวโปรแกรม Ngrok ในเครื่อง
         const res = await fetch('http://127.0.0.1:4040/api/tunnels');
         const data = await res.json();
         
@@ -1236,7 +1261,6 @@ const app = {
           if (tunnel) {
             const ngrokHost = tunnel.public_url;
             
-            // หา path เดิม เพื่อเอามาต่อกับโฮสต์ใหม่
             let currentPath = '/api.php';
             if (this.apiUrl) {
               try {
@@ -1247,13 +1271,11 @@ const app = {
             
             const newNgrokUrl = ngrokHost + currentPath;
 
-            // ถ้าตรวจพบว่าลิงก์ Ngrok เปลี่ยนแปลงไปจากที่มีอยู่
             if (this.apiUrl !== newNgrokUrl && newNgrokUrl.includes('ngrok-free.app')) {
               console.log("พบ Ngrok URL ใหม่:", newNgrokUrl);
               this.apiUrl = newNgrokUrl;
               localStorage.setItem('savedApiUrl', newNgrokUrl);
               
-              // อัปเดตในช่อง input (ถ้าผู้ใช้อยู่หน้าตั้งค่าพอดี)
               const apiInput = document.getElementById('cfg-api');
               if (apiInput) apiInput.value = newNgrokUrl;
 
@@ -1270,9 +1292,9 @@ const app = {
           }
         }
       } catch (error) {
-        // หากไม่มี Ngrok เปิดอยู่ หรือดึงข้อมูลไม่ได้ (เช่น Mixed Content block) ปล่อยผ่านเงียบๆ ไม่ต้องแจ้ง Error
+        // เงียบไว้
       }
-    }, 3000); // เช็คทุกๆ 3 วินาที
+    }, 3000);
   },
 
   navigate(viewId) {
@@ -1616,7 +1638,7 @@ const app = {
   },
 
   // ---------------------------------------------------------
-  // SUPERADMIN - CRUD Functions
+  // SUPERADMIN - CRUD Functions 
   // ---------------------------------------------------------
   async editUserRecord(oldName) {
     const pin = localStorage.getItem('adminTokenPin');
@@ -1900,7 +1922,7 @@ const app = {
       const logs = await logsResponse.json();
 
       if(employees.error) throw new Error(employees.error);
-      if(logs.error && Array.isArray(logs) === false) throw new Error(logs.error);
+      if(logs.error && Array.isArray(logs) === false && logs.error) throw new Error(logs.error);
       
       status.style.display = 'none';
       if(!Array.isArray(employees) || employees.length === 0) {
@@ -2488,6 +2510,7 @@ const app = {
         `;
         tbody.appendChild(tr);
 
+        // แทรกแถวแสดงผลการปฏิบัติงานของพนักงาน ถ้ามีการบันทึกไว้
         if (times.empReport && times.empReport.trim() !== '') {
           const trReport = document.createElement('tr');
           trReport.innerHTML = `
