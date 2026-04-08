@@ -280,7 +280,7 @@
     tr:hover td { background: #f8fafc; }
     .type-in { color: var(--success); font-weight: 600; }
     .type-out { color: var(--warning); font-weight: 600; }
-    .action-cell { display: flex; gap: 8px; } /* สำหรับปุ่มจัดการของ Superadmin */
+    .action-cell { display: flex; gap: 8px; }
 
     /* Calendar Styles */
     .calendar-wrapper { background: #ffffff; border-radius: 16px; padding: 24px 16px; border: 1px solid var(--border-color); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
@@ -358,8 +358,8 @@
 
     /* ไฮไลท์คำค้นหา (Search Highlight) */
     .highlight-search {
-      background-color: #fef08a; /* สีเหลืองอ่อน */
-      color: #b45309; /* สีส้มเข้ม */
+      background-color: #fef08a; 
+      color: #b45309; 
       padding: 0 2px;
       border-radius: 4px;
       font-weight: 700;
@@ -394,62 +394,37 @@
       }
       .app-container { padding: 0 !important; max-width: 100% !important; width: 100% !important; margin: 0 !important; }
       
-      /* ซ่อนส่วนที่ไม่ต้องการปริ้น */
       .header, .top-nav, button, .admin-trigger, #history-list-view, .print-hide, .superadmin-only { 
         display: none !important; 
       }
       
-      /* จัดรูปแบบ Card ให้เหมาะกับกระดาษ */
       .card-panel { 
-        box-shadow: none !important; 
-        border: none !important; 
-        padding: 0 !important; 
-        margin: 0 !important;
-        background: transparent !important;
-        width: 100% !important;
-        max-width: 100% !important;
+        box-shadow: none !important; border: none !important; padding: 0 !important; 
+        margin: 0 !important; background: transparent !important; width: 100% !important; max-width: 100% !important;
       }
       
-      /* ปรับสีข้อความและไอคอนให้เป็นดำหรือเข้ม */
       .title, .subtitle, * { color: #000 !important; }
       svg { stroke: #000 !important; }
       
-      /* จัดรูปแบบกล่องข้อความรายละเอียด */
       #history-detail-text, #cal-day-detail > div {
-        border: 1px solid #ccc !important;
-        background: #f9f9f9 !important;
-        padding: 16px !important;
-        color: #000 !important;
-        width: 100% !important;
-        word-wrap: break-word !important;
+        border: 1px solid #ccc !important; background: #f9f9f9 !important;
+        padding: 16px !important; color: #000 !important; width: 100% !important; word-wrap: break-word !important;
       }
       
-      /* จัดรูปแบบตาราง */
       .table-container { 
-        border: none !important; 
-        box-shadow: none !important; 
-        overflow: visible !important; 
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
+        border: none !important; box-shadow: none !important; overflow: visible !important; 
+        width: 100% !important; margin: 0 !important; padding: 0 !important;
       }
       table { 
-        border-collapse: collapse !important; 
-        width: 100% !important; 
-        max-width: 100% !important;
-        border: 1px solid #ccc !important; 
-        table-layout: auto !important; 
+        border-collapse: collapse !important; width: 100% !important; max-width: 100% !important;
+        border: 1px solid #ccc !important; table-layout: auto !important; 
       }
       th, td { 
-        border: 1px solid #ccc !important; 
-        padding: 12px !important; 
-        color: #000 !important; 
-        white-space: normal !important; 
-        word-wrap: break-word !important;
+        border: 1px solid #ccc !important; padding: 12px !important; color: #000 !important; 
+        white-space: normal !important; word-wrap: break-word !important;
       }
       th { background-color: #f0f0f0 !important; }
       
-      /* บังคับแสดงผลเฉพาะหน้า Detail */
       #view-work-history { display: block !important; width: 100% !important; }
       #history-detail-view { display: block !important; width: 100% !important; }
     }
@@ -465,20 +440,12 @@
       display: flex; opacity: 1;
     }
     .image-modal-content {
-      position: relative; 
-      width: auto; 
-      max-width: 90vw; 
-      max-height: 90vh;
+      position: relative; width: auto; max-width: 90vw; max-height: 90vh;
       animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     .image-modal-content img {
-      width: 100%; 
-      max-width: 260px; 
-      height: auto; 
-      max-height: 85vh; border-radius: 16px;
-      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-      border: 4px solid #fff; object-fit: contain;
-      display: block;
+      width: 100%; max-width: 260px; height: auto; max-height: 85vh; border-radius: 16px;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 4px solid #fff; object-fit: contain; display: block;
     }
     .image-modal-close {
       position: absolute; top: -16px; right: -16px;
@@ -490,7 +457,6 @@
     }
     .image-modal-close:hover { transform: scale(1.1); background: var(--danger-hover); }
 
-    /* Animations */
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes scanAnim { 0% { top: 10%; } 50% { top: 90%; } 100% { top: 10%; } }
@@ -655,7 +621,7 @@
           <input type="password" id="admin-pin" class="form-control" placeholder="••••••••" style="text-align: center; font-size: 1.2em; letter-spacing: 2px;">
         </div>
         <div style="text-align: center; font-size: 0.85em; color: var(--text-muted); margin-bottom: 24px;">
-         <!--  * กรณีฉุกเฉินเชื่อมต่อ API ไม่ได้ ใช้รหัสสำรอง: <b>recovery123</b> -->
+         <!-- * กรณีฉุกเฉินเชื่อมต่อ API ไม่ได้ ใช้รหัสสำรอง: <b>recovery123</b> -->
         </div>
         <button id="btn-verify-admin" class="btn btn-primary" onclick="app.verifyAdmin()" style="padding: 16px; font-size: 1.1em;">
           <i data-lucide="log-in" style="width: 20px; height: 20px;"></i> เข้าสู่ระบบ
@@ -718,14 +684,17 @@
     </div>
 
     <div class="config-grid">
-      <div class="card-panel">
+      <div class="card-panel" style="grid-column: 1 / -1;">
         <div style="margin-bottom: 20px; font-weight: 700; font-size: 1.1em; color: var(--primary); display: flex; align-items: center; gap: 10px;">
           <i data-lucide="link" style="width: 20px; height: 20px;"></i> การเชื่อมต่อ API
         </div>
         <div class="form-group">
           <label>API URL (รองรับไฟล์ api.php หรือ Google Apps Script)</label>
-          <!-- ⚠️ สำคัญ: ใส่ URL API ของคุณตรงนี้ ก่อนอัปโหลดไฟล์ HTML เพื่อแก้ปัญหามือถือพนักงานไม่อัปเดต URL -->
           <input type="url" id="cfg-api" class="form-control" placeholder="https://yourdomain.com/api.php หรือ https://script.google...">
+          <div style="font-size: 0.85em; color: var(--success); margin-top: 8px; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="zap" style="width: 14px; height: 14px;"></i> 
+            ระบบจะตรวจจับและอัปเดต URL ของ Ngrok ให้อัตโนมัติ (หากเปิดโปรแกรม Ngrok ทิ้งไว้บนเครื่องเดียวกัน)
+          </div>
         </div>
       </div>
 
@@ -788,25 +757,6 @@
             * ปล่อยช่องว่างไว้ หากไม่ต้องการใช้งานระบบตรวจสอบ Wi-Fi
           </div>
         </div>
-
-        <!-- ระบบอัปเดต IP อัตโนมัติ -->
-        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--border-color);">
-          <div style="font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-            <i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i> ระบบอัปเดต IP อัตโนมัติ (สำหรับเน็ตที่เปลี่ยน IP บ่อย)
-          </div>
-          <p style="font-size: 0.85em; color: var(--text-muted); margin-bottom: 12px;">
-            * ให้เปิดหน้านี้ทิ้งไว้บนคอมพิวเตอร์ที่ต่อเน็ตออฟฟิศ ระบบจะทำการเช็คและอัปเดต IP ให้ใหม่โดยอัตโนมัติทุกๆ 1 ชั่วโมง
-          </p>
-          <div id="auto-ip-status" style="margin-bottom: 16px; font-size: 0.9em; display: none; background: rgba(16,185,129,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(16,185,129,0.3);">
-             <div style="color: var(--success); font-weight: 600; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-               <i data-lucide="activity" class="pulse-anim" style="width: 16px; height: 16px;"></i> โหมดอัปเดตอัตโนมัติกำลังทำงาน
-             </div>
-             <div style="color: var(--text-main); margin-left: 22px;">สถานะ: <span id="auto-ip-time">-</span></div>
-          </div>
-          <button id="btn-auto-ip" class="btn btn-outline" style="width: auto; padding: 12px 20px; font-size: 0.95em;" onclick="app.toggleAutoUpdateIP()">
-            <i data-lucide="play-circle" style="width: 18px; height: 18px;"></i> เปิดโหมดอัปเดต IP ค้างไว้
-          </button>
-        </div>
       </div>
 
       <div class="card-panel" style="grid-column: 1 / -1;">
@@ -864,9 +814,9 @@
           <option value="12">ธันวาคม</option>
         </select>
         <select id="report-year" class="form-control" style="flex: 1; padding: 14px;">
+          <option value="2027">2027</option>
           <option value="2026">2026</option>
           <option value="2025">2025</option>
-          <option value="2024">2024</option>
         </select>
         <button class="btn btn-primary" style="width: auto; padding: 12px 24px; border-radius: 14px;" onclick="app.handleMonthlySearch()">
           <i data-lucide="search" style="width: 20px; height: 20px;"></i>
@@ -1178,7 +1128,7 @@ window.fetch = function() {
 };
 
 // ⚠️ สำคัญมาก! เปลี่ยน URL ด้านล่างให้เป็น URL ปัจจุบันของ Ngrok ก่อนนำไฟล์ขึ้น Github
-const HARDCODED_API_URL = 'https://ddae-171-7-87-90.ngrok-free.app/facelogin/api.php';
+const HARDCODED_API_URL = 'https://ddae-171-7-87-90.ngrok-free.app';
 const MATCH_THRESHOLD = 0.48; 
 
 const app = {
@@ -1193,9 +1143,16 @@ const app = {
   matchedName: null,
   regCounter: 0,
   calendarData: {},
+  
+  // State สำหรับ Config
   sysConfig: null,
+
+  // State สำหรับ Auto Updater
   isAutoIpRunning: false,
   autoIpInterval: null,
+  ngrokTrackerInterval: null,
+
+  // State สำหรับ History Pagination
   historyData: {}, 
   historySortedDates: [],
   historyCurrentPage: 1,
@@ -1257,6 +1214,65 @@ const app = {
     } else {
       document.getElementById('home-alert').style.display = 'none';
     }
+    
+    // เริ่มระบบดึง URL ของ Ngrok อัตโนมัติ (ทำงานเบื้องหลัง)
+    this.startNgrokAutoTracker();
+  },
+
+  // ---------------------------------------------------------
+  // AUTO NGROK DETECTOR (ฟีเจอร์สอดแนมการเปลี่ยนแปลงของ Ngrok)
+  // ---------------------------------------------------------
+  startNgrokAutoTracker() {
+    if (this.ngrokTrackerInterval) clearInterval(this.ngrokTrackerInterval);
+    
+    this.ngrokTrackerInterval = setInterval(async () => {
+      try {
+        // แอบยิงไปที่ตัวโปรแกรม Ngrok ในเครื่อง
+        const res = await fetch('http://127.0.0.1:4040/api/tunnels');
+        const data = await res.json();
+        
+        if (data && data.tunnels && data.tunnels.length > 0) {
+          const tunnel = data.tunnels.find(t => t.public_url.startsWith('https://'));
+          if (tunnel) {
+            const ngrokHost = tunnel.public_url;
+            
+            // หา path เดิม เพื่อเอามาต่อกับโฮสต์ใหม่
+            let currentPath = '/api.php';
+            if (this.apiUrl) {
+              try {
+                const oldUrl = new URL(this.apiUrl);
+                currentPath = oldUrl.pathname;
+              } catch(e) {}
+            }
+            
+            const newNgrokUrl = ngrokHost + currentPath;
+
+            // ถ้าตรวจพบว่าลิงก์ Ngrok เปลี่ยนแปลงไปจากที่มีอยู่
+            if (this.apiUrl !== newNgrokUrl && newNgrokUrl.includes('ngrok-free.app')) {
+              console.log("พบ Ngrok URL ใหม่:", newNgrokUrl);
+              this.apiUrl = newNgrokUrl;
+              localStorage.setItem('savedApiUrl', newNgrokUrl);
+              
+              // อัปเดตในช่อง input (ถ้าผู้ใช้อยู่หน้าตั้งค่าพอดี)
+              const apiInput = document.getElementById('cfg-api');
+              if (apiInput) apiInput.value = newNgrokUrl;
+
+              Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'อัปเดต Ngrok URL ให้อัตโนมัติแล้ว!',
+                text: newNgrokUrl,
+                showConfirmButton: false,
+                timer: 4000
+              });
+            }
+          }
+        }
+      } catch (error) {
+        // หากไม่มี Ngrok เปิดอยู่ หรือดึงข้อมูลไม่ได้ (เช่น Mixed Content block) ปล่อยผ่านเงียบๆ ไม่ต้องแจ้ง Error
+      }
+    }, 3000); // เช็คทุกๆ 3 วินาที
   },
 
   navigate(viewId) {
@@ -1600,7 +1616,7 @@ const app = {
   },
 
   // ---------------------------------------------------------
-  // SUPERADMIN - CRUD Functions (FIXED)
+  // SUPERADMIN - CRUD Functions
   // ---------------------------------------------------------
   async editUserRecord(oldName) {
     const pin = localStorage.getItem('adminTokenPin');
@@ -2472,7 +2488,6 @@ const app = {
         `;
         tbody.appendChild(tr);
 
-        // แทรกแถวแสดงผลการปฏิบัติงานของพนักงาน ถ้ามีการบันทึกไว้
         if (times.empReport && times.empReport.trim() !== '') {
           const trReport = document.createElement('tr');
           trReport.innerHTML = `
@@ -2492,9 +2507,6 @@ const app = {
     document.getElementById('history-detail-view').style.display = 'none';
   },
 
-  // ---------------------------------------------------------
-  // โค้ดส่วน Scanner (กล้องและใบหน้า) ที่ปรับความเร็วแล้ว
-  // ---------------------------------------------------------
   async initRegisterView() {
     this.regCounter = 0;
     const nameInput = document.getElementById('reg-name');
